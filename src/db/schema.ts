@@ -112,6 +112,31 @@ export const matches = pgTable("matches", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const events = pgTable("events", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  serviceType: text("service_type").notNull(),
+  serviceCategory: text("service_category").default("complex").notNull(),
+  country: text("country").notNull(),
+  status: text("status").default("planned").notNull(),
+  notes: text("notes").default("").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const eventMeetings = pgTable("event_meetings", {
+  id: serial("id").primaryKey(),
+  eventId: serial("event_id").references(() => events.id),
+  companyId: serial("company_id").references(() => companies.id),
+  foreignPartnerId: serial("foreign_partner_id").references(() => foreignPartners.id),
+  matchScore: doublePrecision("match_score").default(0).notNull(),
+  matchType: text("match_type").default("auto").notNull(), // auto, manual
+  status: text("status").default("suggested").notNull(),
+  notes: text("notes").default("").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const kpiTargets = pgTable("kpi_targets", {
   id: serial("id").primaryKey(),
   year: serial("year").notNull().unique(),

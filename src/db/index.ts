@@ -161,6 +161,35 @@ export async function ensureDatabaseReady() {
           updated_at timestamp NOT NULL DEFAULT now()
         )
       `);
+
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS events (
+          id serial PRIMARY KEY,
+          name text NOT NULL,
+          service_type text NOT NULL,
+          service_category text NOT NULL DEFAULT 'complex',
+          country text NOT NULL,
+          status text NOT NULL DEFAULT 'planned',
+          notes text NOT NULL DEFAULT '',
+          created_at timestamp NOT NULL DEFAULT now(),
+          updated_at timestamp NOT NULL DEFAULT now()
+        )
+      `);
+
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS event_meetings (
+          id serial PRIMARY KEY,
+          event_id integer REFERENCES events(id),
+          company_id integer REFERENCES companies(id),
+          foreign_partner_id integer REFERENCES foreign_partners(id),
+          match_score double precision NOT NULL DEFAULT 0,
+          match_type text NOT NULL DEFAULT 'auto',
+          status text NOT NULL DEFAULT 'suggested',
+          notes text NOT NULL DEFAULT '',
+          created_at timestamp NOT NULL DEFAULT now(),
+          updated_at timestamp NOT NULL DEFAULT now()
+        )
+      `);
     })();
   }
 

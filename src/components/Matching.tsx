@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Search, RefreshCw, Globe, Building2, User as UserIcon, Phone, Mail,
-  Check, X, Calendar, ChevronRight, Info, AlertTriangle, Target, Filter
+  Check, X, Calendar, ChevronRight, Info, AlertTriangle, Target, Filter, Funnel
 } from "lucide-react";
 
 interface ForeignPartner {
@@ -51,7 +51,10 @@ const statusLabels: Record<string, { label: string; color: string }> = {
   rejected: { label: "Отказ", color: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" },
 };
 
+import EventFunnel from "./EventFunnel";
+
 export default function Matching() {
+  const [tab, setTab] = useState<"matches" | "funnel">("matches");
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [recalculating, setRecalculating] = useState(false);
@@ -161,8 +164,27 @@ export default function Matching() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Tab switcher */}
+      <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 rounded-xl p-1 w-fit">
+        <button onClick={() => setTab("matches")}
+          className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
+            tab === "matches" ? "bg-white dark:bg-slate-800 shadow-xs text-indigo-600" : "text-slate-500 hover:text-slate-700"
+          }`}>
+          <Target className="w-4 h-4" /> Совпадения
+        </button>
+        <button onClick={() => setTab("funnel")}
+          className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
+            tab === "funnel" ? "bg-white dark:bg-slate-800 shadow-xs text-indigo-600" : "text-slate-500 hover:text-slate-700"
+          }`}>
+          <Funnel className="w-4 h-4" /> Воронка
+        </button>
+      </div>
+
+      {tab === "funnel" ? (
+        <EventFunnel />
+      ) : (
+        <>
       {/* Stats & Actions */}
-      <div className="bg-white dark:bg-slate-950 rounded-2xl p-4 shadow-xs border border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <Target className="w-5 h-5 text-indigo-500" />
@@ -185,7 +207,6 @@ export default function Matching() {
             {recalculating ? "Расчёт..." : "Пересчитать совпадения"}
           </button>
         </div>
-      </div>
 
       {/* Search & Filter */}
       <div className="flex items-center gap-3 flex-wrap">
@@ -399,6 +420,8 @@ export default function Matching() {
         <div className="bg-white dark:bg-slate-950 rounded-2xl p-8 border border-slate-100 dark:border-slate-800 text-center">
           <p className="text-sm text-slate-500">Ничего не найдено по вашему запросу</p>
         </div>
+      )}
+        </>
       )}
     </div>
   );
