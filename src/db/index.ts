@@ -147,6 +147,20 @@ export async function ensureDatabaseReady() {
           updated_at timestamp NOT NULL DEFAULT now()
         )
       `);
+
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS matches (
+          id serial PRIMARY KEY,
+          foreign_partner_id integer REFERENCES foreign_partners(id),
+          company_id integer REFERENCES companies(id),
+          score double precision NOT NULL DEFAULT 0,
+          match_reason text NOT NULL DEFAULT '',
+          status text NOT NULL DEFAULT 'new',
+          notes text NOT NULL DEFAULT '',
+          created_at timestamp NOT NULL DEFAULT now(),
+          updated_at timestamp NOT NULL DEFAULT now()
+        )
+      `);
     })();
   }
 

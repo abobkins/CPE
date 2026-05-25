@@ -100,6 +100,18 @@ export const foreignPartners = pgTable("foreign_partners", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const matches = pgTable("matches", {
+  id: serial("id").primaryKey(),
+  foreignPartnerId: serial("foreign_partner_id").references(() => foreignPartners.id),
+  companyId: serial("company_id").references(() => companies.id),
+  score: doublePrecision("score").default(0).notNull(),
+  matchReason: text("match_reason").default("").notNull(),
+  status: text("status").default("new").notNull(), // new, contacted, meeting_scheduled, meeting_done, rejected
+  notes: text("notes").default("").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const kpiTargets = pgTable("kpi_targets", {
   id: serial("id").primaryKey(),
   year: serial("year").notNull().unique(),

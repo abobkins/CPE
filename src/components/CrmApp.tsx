@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import * as XLSX from "xlsx";
 import ForeignPartners from "./ForeignPartners";
+import Matching from "./Matching";
 import {
   Search,
   Filter,
@@ -39,7 +40,8 @@ import {
   HelpCircle,
   Clock,
   Briefcase,
-  Inbox
+  Inbox,
+  Target
 } from "lucide-react";
 
 interface SupportMeasure {
@@ -163,7 +165,7 @@ export default function CrmApp() {
   const [darkMode, setDarkMode] = useState(false);
   const [currentRole, setCurrentRole] = useState<"admin" | "manager" | "analyst">("admin");
   const [activeTab, setActiveTab] = useState<"dashboard" | "catalog" | "directory" | "applications" | "custom_fields" | "kpi_targets">("dashboard");
-  const [activeSheet, setActiveSheet] = useState<"cpe" | "foreign_partners">("cpe");
+  const [activeSheet, setActiveSheet] = useState<"cpe" | "foreign_partners" | "matching">("cpe");
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -1312,6 +1314,17 @@ export default function CrmApp() {
             <Globe className="w-4 h-4" />
             Иностранные партнёры
           </button>
+          <button
+            onClick={() => setActiveSheet("matching")}
+            className={`px-5 py-2 text-sm font-bold rounded-xl transition-all flex items-center gap-2 ${
+              activeSheet === "matching"
+                ? "bg-indigo-500 text-white shadow-md"
+                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+            }`}
+          >
+            <Target className="w-4 h-4" />
+            Метчинг
+          </button>
         </div>
 
         {activeSheet === "cpe" && (
@@ -1399,6 +1412,25 @@ export default function CrmApp() {
           </button>
         </div>
 
+            {/* Import/Export toolbar */}
+            <div className="flex items-center gap-2 mb-4 bg-white dark:bg-slate-950 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+              <div className="flex items-center gap-1.5 text-xs text-slate-400 mr-2">
+                <Database className="w-4 h-4 text-indigo-500" />
+                <span className="font-semibold">Реестр ЦПЭ</span>
+              </div>
+              <div className="flex-1" />
+              <button onClick={handleExportCSV} className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+                <Download className="w-4 h-4" /> CSV
+              </button>
+              {currentRole !== "analyst" && (
+                <>
+                  <button onClick={() => setShowImportModal(true)} className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+                    <Upload className="w-4 h-4" /> Импорт
+                  </button>
+                </>
+              )}
+            </div>
+
         {/* -------------------- 1. DASHBOARD TAB -------------------- */}
         {activeTab === "dashboard" && (
           <div className="space-y-6">
@@ -1466,58 +1498,85 @@ export default function CrmApp() {
 
             </div>
 
-            {/* KPI Cards: Поддержка экспорта */}
+            {/* KPI Cards: Поддержка экспорта — графики план/факт */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Объём поддержанного экспорта</span>
-                  <BarChart3 className="w-4 h-4 text-indigo-500" />
-                </div>
-                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
-                  {stats.supportedExportVolume.toFixed(1)} <span className="text-xs font-normal text-slate-400">млн ₽</span>
-                </h3>
-                <div className="mt-3 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${Math.min(100, (stats.supportedExportVolume / Math.max(1, kpiTargets.supportedExportVolume)) * 100)}%` }} />
-                </div>
-                <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-                  <span>Факт: {stats.supportedExportVolume.toFixed(1)} млн ₽</span>
-                  <span>План: {kpiTargets.supportedExportVolume} млн ₽</span>
-                </div>
-              </div>
+              {[
+                {
+                  key: "volume",
+                  label: "Объём поддержанного экспорта",
+                  unit: "млн ₽",
+                  fact: stats.supportedExportVolume,
+                  plan: kpiTargets.supportedExportVolume,
+                  color: "indigo",
+                  icon: BarChart3,
+                },
+                {
+                  key: "countries",
+                  label: "Страновая диверсификация",
+                  unit: "стран",
+                  fact: stats.countryDiversification,
+                  plan: kpiTargets.countryDiversification,
+                  color: "emerald",
+                  icon: Globe,
+                },
+                {
+                  key: "newExporters",
+                  label: "Новые экспортёры",
+                  unit: "компаний",
+                  fact: stats.newExportersCount,
+                  plan: kpiTargets.newExporters,
+                  color: "amber",
+                  icon: Users,
+                },
+              ].map(item => {
+                const pct = Math.min(100, Math.round((item.fact / Math.max(1, item.plan)) * 100));
+                const colorMap: Record<string, { bg: string; text: string; ring: string; light: string }> = {
+                  indigo: { bg: "bg-indigo-50 dark:bg-indigo-950/20", text: "text-indigo-600 dark:text-indigo-400", ring: "stroke-indigo-500", light: "bg-indigo-100 dark:bg-indigo-900/40" },
+                  emerald: { bg: "bg-emerald-50 dark:bg-emerald-950/20", text: "text-emerald-600 dark:text-emerald-400", ring: "stroke-emerald-500", light: "bg-emerald-100 dark:bg-emerald-900/40" },
+                  amber: { bg: "bg-amber-50 dark:bg-amber-950/20", text: "text-amber-600 dark:text-amber-400", ring: "stroke-amber-500", light: "bg-amber-100 dark:bg-amber-900/40" },
+                };
+                const c = colorMap[item.color];
+                const circumference = 2 * Math.PI * 40;
+                const offset = circumference - (pct / 100) * circumference;
 
-              <div className="bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Страновая диверсификация</span>
-                  <Globe className="w-4 h-4 text-emerald-500" />
-                </div>
-                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
-                  {stats.countryDiversification} <span className="text-xs font-normal text-slate-400">стран</span>
-                </h3>
-                <div className="mt-3 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${Math.min(100, (stats.countryDiversification / Math.max(1, kpiTargets.countryDiversification)) * 100)}%` }} />
-                </div>
-                <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-                  <span>Факт: {stats.countryDiversification} стран</span>
-                  <span>План: {kpiTargets.countryDiversification} стран</span>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Новые экспортёры</span>
-                  <Users className="w-4 h-4 text-amber-500" />
-                </div>
-                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
-                  {stats.newExportersCount} <span className="text-xs font-normal text-slate-400">компаний</span>
-                </h3>
-                <div className="mt-3 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div className="bg-amber-500 h-full rounded-full" style={{ width: `${Math.min(100, (stats.newExportersCount / Math.max(1, kpiTargets.newExporters)) * 100)}%` }} />
-                </div>
-                <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-                  <span>Факт: {stats.newExportersCount} компаний</span>
-                  <span>План: {kpiTargets.newExporters} компаний</span>
-                </div>
-              </div>
+                return (
+                  <div key={item.key} className={`${c.bg} p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{item.label}</span>
+                      <item.icon className={`w-4.5 h-4.5 ${c.text}`} />
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="relative w-24 h-24 shrink-0">
+                        <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                          <circle cx="50" cy="50" r="40" fill="none" stroke="#e2e8f0" strokeWidth="8" />
+                          <circle cx="50" cy="50" r="40" fill="none" className={c.ring} strokeWidth="8"
+                            strokeDasharray={circumference}
+                            strokeDashoffset={offset}
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className={`text-xl font-black ${c.text}`}>{pct}%</span>
+                          <span className="text-[9px] text-slate-400">выполн.</span>
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div>
+                          <span className={`text-2xl font-extrabold text-slate-900 dark:text-white`}>{item.fact.toFixed ? item.fact.toFixed(1) : item.fact}</span>
+                          <span className="text-xs text-slate-400 ml-1">/ {item.plan} {item.unit}</span>
+                        </div>
+                        <div className="w-full bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${c.ring.replace("stroke", "bg")}`} style={{ width: `${pct}%` }} />
+                        </div>
+                        <div className="flex justify-between text-[10px] text-slate-400">
+                          <span>Факт: {item.fact.toFixed ? item.fact.toFixed(1) : item.fact} {item.unit}</span>
+                          <span>План: {item.plan} {item.unit}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Limited companies alert */}
@@ -2734,6 +2793,11 @@ export default function CrmApp() {
         {/* Foreign Partners Sheet */}
         {activeSheet === "foreign_partners" && (
           <ForeignPartners />
+        )}
+
+        {/* Matching Sheet */}
+        {activeSheet === "matching" && (
+          <Matching />
         )}
 
       </main>
