@@ -2311,125 +2311,142 @@ export default function CrmApp() {
           </div>
         )}
 
-        {/* -------------------- 3. DIRECTORY TAB -------------------- */}
+        {/* -------------------- 3. DIRECTORY TAB (Hierarchy & Rating) -------------------- */}
         {activeTab === "directory" && (
           <div className="space-y-6">
-            <div className="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <h3 className="text-base font-bold mb-1">Иерархия и Справочники</h3>
-              <p className="text-xs text-slate-500 mb-6">Взаимосвязь Сферы деятельности, Отраслей и Видов деятельности компаний.</p>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                
-                {/* АПК */}
-                <div className="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50 dark:bg-slate-900/40">
-                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2 mb-3">
-                    <span className="text-xs uppercase font-bold text-emerald-600 dark:text-emerald-400 tracking-wider">Сфера: АПК</span>
-                    <span className="text-xs bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded text-emerald-800 dark:text-emerald-300 font-bold">
-                      {companies.filter(c => c.sphere === "АПК").length} компаний
-                    </span>
+            {/* Top stats cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              {[
+                { label: "Всего СМСП", count: stats.total, color: "indigo" },
+                { label: "АПК", count: companies.filter(c => c.sphere === "АПК").length, exportersCount: companies.filter(c => c.sphere === "АПК" && (c.statusExporter === "экспортер" || c.statusExporter === "2025 г.")).length, color: "emerald" },
+                { label: "Промышленность", count: companies.filter(c => c.sphere === "Промышленность").length, exportersCount: companies.filter(c => c.sphere === "Промышленность" && (c.statusExporter === "экспортер" || c.statusExporter === "2025 г.")).length, color: "amber" },
+                { label: "Прочие", count: companies.filter(c => c.sphere === "Прочие").length, exportersCount: companies.filter(c => c.sphere === "Прочие" && (c.statusExporter === "экспортер" || c.statusExporter === "2025 г.")).length, color: "purple" },
+                { label: "Экспортёры", count: stats.exporters, color: "emerald" },
+              ].map((item: any) => {
+                const colorMap: Record<string, string> = { indigo: "bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-900/60", emerald: "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/60", amber: "bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/60", purple: "bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-900/60" };
+                return (
+                  <div key={item.label} className={`${colorMap[item.color]} p-3 rounded-xl border text-center`}>
+                    <div className="text-xl font-black">{item.count}</div>
+                    <div className="text-[10px] font-semibold">{item.label}</div>
+                    {item.exportersCount !== undefined && <div className="text-[9px] mt-0.5 opacity-70">эксп.: {item.exportersCount}</div>}
                   </div>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <h5 className="text-xs font-bold text-slate-600 dark:text-slate-400">Отрасли:</h5>
-                      <ul className="list-disc pl-4 text-xs mt-1 text-slate-700 dark:text-slate-300 space-y-1">
-                        <li>Пищевая промышленность</li>
-                        <li>Пчеловодство</li>
-                        <li>Садоводство</li>
-                      </ul>
-                    </div>
-
-                    <div>
-                      <h5 className="text-xs font-bold text-slate-600 dark:text-slate-400">Основные виды деятельности:</h5>
-                      <p className="text-[11px] text-slate-500 mt-1 italic">
-                        Производство масла и шрота, фасовка меда, выращивание и хранение плодов
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Промышленность */}
-                <div className="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50 dark:bg-slate-900/40">
-                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2 mb-3">
-                    <span className="text-xs uppercase font-bold text-amber-600 dark:text-amber-400 tracking-wider">Сфера: Промышленность</span>
-                    <span className="text-xs bg-amber-100 dark:bg-amber-950 px-2 py-0.5 rounded text-amber-800 dark:text-amber-300 font-bold">
-                      {companies.filter(c => c.sphere === "Промышленность").length} компаний
-                    </span>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <h5 className="text-xs font-bold text-slate-600 dark:text-slate-400">Отрасли:</h5>
-                      <ul className="list-disc pl-4 text-xs mt-1 text-slate-700 dark:text-slate-300 space-y-1">
-                        <li>Тяжелое машиностроение</li>
-                        <li>Легкая промышленность</li>
-                        <li>Лесозаготовка и деревообработка</li>
-                        <li>Электроника</li>
-                      </ul>
-                    </div>
-
-                    <div>
-                      <h5 className="text-xs font-bold text-slate-600 dark:text-slate-400">Основные виды деятельности:</h5>
-                      <p className="text-[11px] text-slate-500 mt-1 italic">
-                        Производство металлургического оборудования, трикотажа, деревянных домокомплектов, микросхем
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Прочие */}
-                <div className="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50 dark:bg-slate-900/40">
-                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2 mb-3">
-                    <span className="text-xs uppercase font-bold text-purple-600 dark:text-purple-400 tracking-wider">Сфера: Прочие</span>
-                    <span className="text-xs bg-purple-100 dark:bg-purple-950 px-2 py-0.5 rounded text-purple-800 dark:text-purple-300 font-bold">
-                      {companies.filter(c => c.sphere === "Прочие").length} компаний
-                    </span>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <h5 className="text-xs font-bold text-slate-600 dark:text-slate-400">Отрасли:</h5>
-                      <ul className="list-disc pl-4 text-xs mt-1 text-slate-700 dark:text-slate-300 space-y-1">
-                        <li>Фармацевтика и биотехнологии</li>
-                        <li>IT и разработка ПО</li>
-                        <li>Сфера услуг</li>
-                      </ul>
-                    </div>
-
-                    <div>
-                      <h5 className="text-xs font-bold text-slate-600 dark:text-slate-400">Основные виды деятельности:</h5>
-                      <p className="text-[11px] text-slate-500 mt-1 italic">
-                        Разработка ферментных препаратов, логистический консалтинг, инжиниринг
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Company Size categorization */}
-              <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-900">
-                <h4 className="text-sm font-bold mb-3">Классификация компаний по масштабу (Реестр МСП)</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl text-xs space-y-1">
-                    <span className="font-bold text-teal-600 block">Микропредприятия</span>
-                    <p className="text-slate-500">Численность: до 15 человек.</p>
-                    <p className="text-slate-500">Годовой доход: до 120 млн рублей.</p>
-                  </div>
-                  <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl text-xs space-y-1">
-                    <span className="font-bold text-blue-600 block">Малые предприятия</span>
-                    <p className="text-slate-500">Численность: до 100 человек.</p>
-                    <p className="text-slate-500">Годовой доход: до 800 млн рублей.</p>
-                  </div>
-                  <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl text-xs space-y-1">
-                    <span className="font-bold text-indigo-600 block">Средние предприятия</span>
-                    <p className="text-slate-500">Численность: до 250 человек.</p>
-                    <p className="text-slate-500">Годовой доход: до 2 млрд рублей.</p>
-                  </div>
-                </div>
-              </div>
-
+                );
+              })}
             </div>
+
+            {/* Classification cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                { label: "Микропредприятия", count: companies.filter(c => c.categoryMsp === "Микро").length, desc: "до 15 чел. / до 120 млн ₽", color: "teal" },
+                { label: "Малые предприятия", count: companies.filter(c => c.categoryMsp === "Малое").length, desc: "до 100 чел. / до 800 млн ₽", color: "blue" },
+                { label: "Средние предприятия", count: companies.filter(c => c.categoryMsp === "Среднее").length, desc: "до 250 чел. / до 2 млрд ₽", color: "indigo" },
+              ].map((item: any) => {
+                const colorMap: Record<string, string> = { teal: "border-teal-200 dark:border-teal-900/60 bg-teal-50 dark:bg-teal-950/20", blue: "border-blue-200 dark:border-blue-900/60 bg-blue-50 dark:bg-blue-950/20", indigo: "border-indigo-200 dark:border-indigo-900/60 bg-indigo-50 dark:bg-indigo-950/20" };
+                return (
+                  <div key={item.label} className={`${colorMap[item.color]} p-3 rounded-xl border`}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{item.label}</span>
+                      <span className="text-lg font-black text-slate-800 dark:text-white">{item.count}</span>
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-0.5">{item.desc}</div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Иерархия: рейтинг компаний */}
+            <div className="bg-white dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+              <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-white">Иерархия компаний по рейтингу</h3>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Рейтинг учитывает: масштаб экспорта, кол-во стран, меры поддержки и конверсию</p>
+                </div>
+                <span className="text-[10px] text-slate-400 font-mono">{companies.length} компаний</span>
+              </div>
+
+              <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                {companies
+                  .map(c => {
+                    const measures = (c.supportMeasures || []) as SupportMeasure[];
+                    const totalMeasures = measures.length;
+                    const conversions = measures.filter(m => m.conversion?.hasContract).length;
+                    const exportVol = (c.exportVolume2025 || 0) + (c.exportVolume2024 || 0) + (c.exportVolume2023 || 0);
+                    const countryCount = (c.exportCountries || "").split(",").filter(Boolean).length;
+
+                    // Rating calculation
+                    const scaleScore = Math.min(30, Math.round(exportVol / 10));
+                    const countryScore = Math.min(25, countryCount * 5);
+                    const measureScore = Math.min(20, totalMeasures * 7);
+                    const conversionRate = totalMeasures > 0 ? (conversions / totalMeasures) * 100 : 0;
+                    const conversionScore = Math.min(25, Math.round(conversionRate * 0.25));
+                    const totalRating = Math.min(100, scaleScore + countryScore + measureScore + conversionScore);
+
+                    return { ...c, _rating: totalRating, _conversionRate: conversionRate, _exportVol: exportVol, _countryCount: countryCount, _totalMeasures: totalMeasures, _conversions: conversions };
+                  })
+                  .sort((a, b) => b._rating - a._rating)
+                  .map((c, idx) => (
+                    <div key={c.id} className="flex items-center gap-3 px-5 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer"
+                      onClick={() => { setSelectedCompanyId(c.id); setCompanyDetailTab("general"); }}
+                    >
+                      {/* Rank */}
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${
+                        idx === 0 ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300" :
+                        idx === 1 ? "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300" :
+                        idx === 2 ? "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300" :
+                        "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                      }`}>
+                        {idx + 1}
+                      </div>
+
+                      {/* Rating bar */}
+                      <div className="w-12 shrink-0">
+                        <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${
+                            c._rating >= 70 ? "bg-emerald-500" : c._rating >= 40 ? "bg-amber-500" : "bg-slate-400"
+                          }`} style={{ width: `${c._rating}%` }} />
+                        </div>
+                        <div className="text-[9px] font-mono text-slate-400 text-center mt-0.5">{c._rating}</div>
+                      </div>
+
+                      {/* Company info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-slate-800 dark:text-white truncate">{c.name}</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                            c.sphere === "АПК" ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300" :
+                            c.sphere === "Промышленность" ? "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300" :
+                            "bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300"
+                          }`}>{c.sphere}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[9px] text-slate-400 mt-0.5">
+                          <span>Экспорт: {c._exportVol.toFixed(1)} млн ₽</span>
+                          <span>·</span>
+                          <span>Стран: {c._countryCount}</span>
+                          <span>·</span>
+                          <span>Мер: {c._totalMeasures}</span>
+                          {c._totalMeasures > 0 && (
+                            <>
+                              <span>·</span>
+                              <span className={c._conversionRate >= 50 ? "text-emerald-500" : "text-amber-500"}>Конв.: {Math.round(c._conversionRate)}%</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Category badge */}
+                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold ${
+                        c.categoryMsp === "Микро" ? "bg-teal-50 dark:bg-teal-950 text-teal-600 dark:text-teal-400" :
+                        c.categoryMsp === "Малое" ? "bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400" :
+                        "bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400"
+                      }`}>{c.categoryMsp}</span>
+                    </div>
+                  ))}
+                {companies.length === 0 && (
+                  <div className="py-10 text-center text-sm text-slate-400">Нет компаний для отображения</div>
+                )}
+              </div>
+            </div>
+
           </div>
         )}
 
