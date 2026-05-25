@@ -86,6 +86,20 @@ export const applications = pgTable("applications", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const foreignPartners = pgTable("foreign_partners", {
+  id: serial("id").primaryKey(),
+  companyName: text("company_name").notNull(),
+  country: text("country").notNull(),
+  contactPerson: text("contact_person").default("").notNull(),
+  phone: text("phone").default("").notNull(),
+  email: text("email").default("").notNull(),
+  website: text("website").default("").notNull(),
+  productInterests: text("product_interests").default("").notNull(),
+  notes: text("notes").default("").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const kpiTargets = pgTable("kpi_targets", {
   id: serial("id").primaryKey(),
   year: serial("year").notNull().unique(),

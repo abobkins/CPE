@@ -131,6 +131,22 @@ export async function ensureDatabaseReady() {
           updated_at timestamp NOT NULL DEFAULT now()
         )
       `);
+
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS foreign_partners (
+          id serial PRIMARY KEY,
+          company_name text NOT NULL,
+          country text NOT NULL,
+          contact_person text NOT NULL DEFAULT '',
+          phone text NOT NULL DEFAULT '',
+          email text NOT NULL DEFAULT '',
+          website text NOT NULL DEFAULT '',
+          product_interests text NOT NULL DEFAULT '',
+          notes text NOT NULL DEFAULT '',
+          created_at timestamp NOT NULL DEFAULT now(),
+          updated_at timestamp NOT NULL DEFAULT now()
+        )
+      `);
     })();
   }
 

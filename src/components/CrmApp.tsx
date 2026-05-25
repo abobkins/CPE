@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import * as XLSX from "xlsx";
+import ForeignPartners from "./ForeignPartners";
 import {
   Search,
   Filter,
@@ -162,6 +163,7 @@ export default function CrmApp() {
   const [darkMode, setDarkMode] = useState(false);
   const [currentRole, setCurrentRole] = useState<"admin" | "manager" | "analyst">("admin");
   const [activeTab, setActiveTab] = useState<"dashboard" | "catalog" | "directory" | "applications" | "custom_fields" | "kpi_targets">("dashboard");
+  const [activeSheet, setActiveSheet] = useState<"cpe" | "foreign_partners">("cpe");
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -1286,6 +1288,34 @@ export default function CrmApp() {
           </div>
         )}
 
+        {/* Sheet Switcher */}
+        <div className="flex items-center gap-2 mb-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-1.5 border border-slate-200 dark:border-slate-800 w-fit">
+          <button
+            onClick={() => setActiveSheet("cpe")}
+            className={`px-5 py-2 text-sm font-bold rounded-xl transition-all flex items-center gap-2 ${
+              activeSheet === "cpe"
+                ? "bg-indigo-500 text-white shadow-md"
+                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+            }`}
+          >
+            <Building2 className="w-4 h-4" />
+            ЦПЭ
+          </button>
+          <button
+            onClick={() => setActiveSheet("foreign_partners")}
+            className={`px-5 py-2 text-sm font-bold rounded-xl transition-all flex items-center gap-2 ${
+              activeSheet === "foreign_partners"
+                ? "bg-indigo-500 text-white shadow-md"
+                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+            }`}
+          >
+            <Globe className="w-4 h-4" />
+            Иностранные партнёры
+          </button>
+        </div>
+
+        {activeSheet === "cpe" && (
+          <>
         {/* Tab navigation */}
         <div className="flex border-b border-slate-200 dark:border-slate-800 mb-6 overflow-x-auto whitespace-nowrap">
           <button
@@ -2696,6 +2726,14 @@ export default function CrmApp() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* End CPE Sheet */}
+        </> )}
+
+        {/* Foreign Partners Sheet */}
+        {activeSheet === "foreign_partners" && (
+          <ForeignPartners />
         )}
 
       </main>
