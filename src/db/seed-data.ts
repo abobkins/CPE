@@ -32,8 +32,8 @@ export const initialCompanies = [
     exportVolume2025: 180.0,
     exportCountries: "Китай, Индия, Казахстан, Узбекистан",
     supportMeasures: [
-      { id: "sm-1", name: "Субсидия на сертификацию продукции", date: "2024-05-12", status: "Одобрено", amount: 1500000 },
-      { id: "sm-2", name: "Участие в международной выставке в Шанхае", date: "2025-10-15", status: "Выполнено", amount: 800000 }
+      { id: "sm-1", name: "Субсидия на сертификацию продукции", serviceType: "exhibition", serviceCategory: "complex", requestDate: "2024-04-01", receiptDate: "2024-05-12", status: "Одобрено", amount: 1500000, conversion: { hasContract: true, contractCountry: "Китай", contractAmount: 12000000, contractDate: "2024-08-15", isNewExporter: false } },
+      { id: "sm-2", name: "Участие в международной выставке в Шанхае", serviceType: "exhibition", serviceCategory: "complex", requestDate: "2025-08-01", receiptDate: "2025-10-15", status: "Выполнено", amount: 800000, conversion: { hasContract: true, contractCountry: "Индия", contractAmount: 8500000, contractDate: "2025-11-20", isNewExporter: true } }
     ],
     interactions: [
       { id: "int-1", date: "2026-01-10", author: "Степанов И.Д.", text: "Проведен созвон, компания подала заявку на субсидирование логистики в СНГ." },
@@ -77,7 +77,7 @@ export const initialCompanies = [
     exportVolume2025: 520.0,
     exportCountries: "Китай, Монголия, Вьетнам",
     supportMeasures: [
-      { id: "sm-3", name: "Льготное кредитование экспортеров", date: "2023-04-20", status: "Одобрено", amount: 25000000 }
+      { id: "sm-3", name: "Льготное кредитование экспортеров", serviceType: "other", serviceCategory: "popularization", requestDate: "2023-03-01", receiptDate: "2023-04-20", status: "Одобрено", amount: 25000000, conversion: { hasContract: true, contractCountry: "Китай, Монголия", contractAmount: 45000000, contractDate: "2023-09-10", isNewExporter: false } }
     ],
     interactions: [
       { id: "int-3", date: "2026-02-14", author: "Иванова М.В.", text: "Проведены переговоры по поставке флекситанков с маслом по железной дороге через Забайкальск." }
@@ -159,7 +159,7 @@ export const initialCompanies = [
     exportVolume2025: 5.5,
     exportCountries: "Беларусь, Казахстан",
     supportMeasures: [
-      { id: "sm-4", name: "Разработка экспортного бренда и каталога", date: "2024-08-11", status: "Выполнено", amount: 300000 }
+      { id: "sm-4", name: "Разработка экспортного бренда и каталога", serviceType: "other", serviceCategory: "popularization", requestDate: "2024-06-01", receiptDate: "2024-08-11", status: "Выполнено", amount: 300000, conversion: null }
     ],
     interactions: [
       { id: "int-5", date: "2026-01-15", author: "Соколова Е.В.", text: "Отгружена первая партия детской одежды в Минск. Оформляют субсидию на маркетплейсы." }
@@ -201,7 +201,7 @@ export const initialCompanies = [
     exportVolume2025: 28.1,
     exportCountries: "Китай, Германия, Япония",
     supportMeasures: [
-      { id: "sm-5", name: "Сертификация продукции Халяль / Органик", date: "2024-11-20", status: "Одобрено", amount: 450000 }
+      { id: "sm-5", name: "Сертификация продукции Халяль / Органик", serviceType: "search_and_selection", serviceCategory: "complex", requestDate: "2024-10-01", receiptDate: "2024-11-20", status: "Одобрено", amount: 450000, conversion: { hasContract: true, contractCountry: "Германия", contractAmount: 5000000, contractDate: "2025-01-15", isNewExporter: true } }
     ],
     interactions: [
       { id: "int-6", date: "2026-02-05", author: "Дмитриева О.Н.", text: "Отправили образцы меда на экспертизу в Шанхай для получения импортного разрешения КНР." }
@@ -281,7 +281,7 @@ export const initialCompanies = [
     exportVolume2025: 67.0,
     exportCountries: "Казахстан, Узбекистан, Индия",
     supportMeasures: [
-      { id: "sm-6", name: "Субсидия Минпромторга на НИОКР", date: "2024-03-10", status: "Одобрено", amount: 12000000 }
+      { id: "sm-6", name: "Субсидия Минпромторга на НИОКР", serviceType: "other", serviceCategory: "popularization", requestDate: "2024-01-01", receiptDate: "2024-03-10", status: "Одобрено", amount: 12000000, conversion: null }
     ],
     interactions: [
       { id: "int-8", date: "2026-02-01", author: "Федоров С.М.", text: "Компания не работает с региональным ЦПЭ, так как обслуживается напрямую в Минпромторге и РЭЦ." }
@@ -319,7 +319,7 @@ export const initialCompanies = [
     exportVolume2025: 112.0,
     exportCountries: "Казахстан, Кыргызстан, Турция, ОАЭ",
     supportMeasures: [
-      { id: "sm-7", name: "Субсидирование части затрат на транспортировку древесины", date: "2024-07-20", status: "Одобрено", amount: 4800000 }
+      { id: "sm-7", name: "Субсидирование части затрат на транспортировку древесины", serviceType: "business_mission", serviceCategory: "complex", requestDate: "2024-06-01", receiptDate: "2024-07-20", status: "Одобрено", amount: 4800000, conversion: { hasContract: true, contractCountry: "ОАЭ, Турция", contractAmount: 15000000, contractDate: "2024-10-05", isNewExporter: true } }
     ],
     interactions: [
       { id: "int-9", date: "2026-02-18", author: "Смирнов А.И.", text: "Проведен вебинар для компании по правилам экспорта пиломатериалов с системой ЛесЕГАИС." }

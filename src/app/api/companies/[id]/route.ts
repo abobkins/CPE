@@ -62,7 +62,7 @@ export async function PUT(
     } else if (actionType === "toggle_task") {
       changeDetails = `Статус задачи изменен на "${fieldsToUpdate.taskStatus === "completed" ? "Выполнено" : "В процессе"}"`;
     } else if (actionType === "add_measure") {
-      changeDetails = `Добавлена мера поддержки: "${fieldsToUpdate.measureName}" (${fieldsToUpdate.measureAmount} руб.)`;
+      changeDetails = `Добавлена мера поддержки: "${fieldsToUpdate.measureName}" (${fieldsToUpdate.measureAmount} руб., тип: ${fieldsToUpdate.measureServiceType})`;
     } else if (actionType === "delete_measure") {
       changeDetails = `Удалена мера поддержки с ID: ${fieldsToUpdate.measureId}`;
     } else {
@@ -133,9 +133,13 @@ export async function PUT(
       const newMeasure = {
         id: "sm-" + Math.random().toString(36).substr(2, 9),
         name: fieldsToUpdate.measureName,
-        date: fieldsToUpdate.measureDate,
+        serviceType: fieldsToUpdate.measureServiceType || "other",
+        serviceCategory: fieldsToUpdate.measureServiceCategory || "popularization",
+        requestDate: fieldsToUpdate.measureRequestDate || "",
+        receiptDate: fieldsToUpdate.measureReceiptDate || "",
         status: fieldsToUpdate.measureStatus,
         amount: Number(fieldsToUpdate.measureAmount) || 0,
+        conversion: fieldsToUpdate.measureConversion || null,
       };
       finalUpdates.supportMeasures = [...(current.supportMeasures as any[]), newMeasure];
     }

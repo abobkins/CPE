@@ -44,9 +44,19 @@ import {
 interface SupportMeasure {
   id: string;
   name: string;
-  date: string;
-  status: string;
+  serviceType: "exhibition" | "business_mission" | "search_and_selection" | "etp_placement" | "reverse_business_mission" | "interregional_mission" | "other";
+  serviceCategory: "complex" | "popularization";
+  requestDate: string;
+  receiptDate: string;
   amount: number;
+  status: string;
+  conversion: {
+    hasContract: boolean;
+    contractCountry: string;
+    contractAmount: number;
+    contractDate: string;
+    isNewExporter: boolean;
+  } | null;
 }
 
 interface Interaction {
@@ -217,9 +227,16 @@ export default function CrmApp() {
   const [newTaskAssignedTo, setNewTaskAssignedTo] = useState("");
   
   const [newMeasureName, setNewMeasureName] = useState("");
-  const [newMeasureDate, setNewMeasureDate] = useState("");
+  const [newMeasureServiceType, setNewMeasureServiceType] = useState<string>("exhibition");
+  const [newMeasureRequestDate, setNewMeasureRequestDate] = useState("");
+  const [newMeasureReceiptDate, setNewMeasureReceiptDate] = useState("");
   const [newMeasureStatus, setNewMeasureStatus] = useState("Одобрено");
   const [newMeasureAmount, setNewMeasureAmount] = useState(0);
+  const [newMeasureConversion, setNewMeasureConversion] = useState(false);
+  const [newMeasureContractCountry, setNewMeasureContractCountry] = useState("");
+  const [newMeasureContractAmount, setNewMeasureContractAmount] = useState(0);
+  const [newMeasureContractDate, setNewMeasureContractDate] = useState("");
+  const [newMeasureIsNewExporter, setNewMeasureIsNewExporter] = useState(false);
 
   // Applications state
   const [applications, setApplications] = useState<Application[]>([]);
@@ -455,6 +472,11 @@ export default function CrmApp() {
   const handleAddSupportMeasure = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCompany || !newMeasureName.trim()) return;
+
+    const serviceCategory: "complex" | "popularization" =
+      ["exhibition", "business_mission", "search_and_selection", "etp_placement", "reverse_business_mission", "interregional_mission"].includes(newMeasureServiceType)
+        ? "complex" : "popularization";
+
     try {
       const res = await fetch(`/api/companies/${selectedCompany.id}`, {
         method: "PUT",
@@ -462,9 +484,19 @@ export default function CrmApp() {
         body: JSON.stringify({
           actionType: "add_measure",
           measureName: newMeasureName,
-          measureDate: newMeasureDate || new Date().toISOString().split("T")[0],
+          measureServiceType: newMeasureServiceType,
+          measureServiceCategory: serviceCategory,
+          measureRequestDate: newMeasureRequestDate || new Date().toISOString().split("T")[0],
+          measureReceiptDate: newMeasureReceiptDate || new Date().toISOString().split("T")[0],
           measureStatus: newMeasureStatus,
           measureAmount: newMeasureAmount,
+          measureConversion: newMeasureConversion ? {
+            hasContract: true,
+            contractCountry: newMeasureContractCountry,
+            contractAmount: newMeasureContractAmount,
+            contractDate: newMeasureContractDate || new Date().toISOString().split("T")[0],
+            isNewExporter: newMeasureIsNewExporter,
+          } : null,
           userName: `Пользователь (${currentRole})`,
         }),
       });
@@ -473,9 +505,16 @@ export default function CrmApp() {
         setSelectedCompany(updated);
         setCompanies(prev => prev.map(c => c.id === updated.id ? updated : c));
         setNewMeasureName("");
-        setNewMeasureDate("");
+        setNewMeasureServiceType("exhibition");
+        setNewMeasureRequestDate("");
+        setNewMeasureReceiptDate("");
         setNewMeasureStatus("Одобрено");
         setNewMeasureAmount(0);
+        setNewMeasureConversion(false);
+        setNewMeasureContractCountry("");
+        setNewMeasureContractAmount(0);
+        setNewMeasureContractDate("");
+        setNewMeasureIsNewExporter(false);
       }
     } catch (e) {
       console.error(e);
@@ -957,7 +996,7 @@ export default function CrmApp() {
       return acc;
     }, {} as Record<string, number>);
 
-    // Categories MSP
+    // Categories СМСП
     const mspCategories = companies.reduce((acc, c) => {
       acc[c.categoryMsp] = (acc[c.categoryMsp] || 0) + 1;
       return acc;
@@ -973,6 +1012,57 @@ export default function CrmApp() {
     const totalExport2025 = companies.reduce((sum, c) => sum + (c.exportVolume2025 || 0), 0);
     const totalExport2024 = companies.reduce((sum, c) => sum + (c.exportVolume2024 || 0), 0);
 
+    // Support measures analytics
+    const allMeasures = companies.flatMap(c => c.supportMeasures || []);
+    const complexCount = allMeasures.filter(m => m.serviceCategory === "complex").length;
+    const popularizationCount = allMeasures.filter(m => m.serviceCategory === "popularization").length;
+    const complexCompanies = new Set(companies.filter(c => c.supportMeasures?.some(m => m.serviceCategory === "complex")).map(c => c.id)).size;
+    const popularizationCompanies = new Set(companies.filter(c => c.supportMeasures?.some(m => m.serviceCategory === "popularization")).map(c => c.id)).size;
+
+    // Service type breakdown for complex services
+    const serviceTypeCounts = allMeasures.reduce((acc, m) => {
+      if (m.serviceCategory === "complex") {
+        acc[m.serviceType] = (acc[m.serviceType] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+
+    // KPI: Supported export volume (sum of all contract amounts from conversions)
+    const supportedExportVolume = allMeasures
+      .filter(m => m.conversion?.hasContract)
+      .reduce((sum, m) => sum + (m.conversion?.contractAmount || 0), 0);
+
+    // KPI: Country diversification
+    const exportCountriesFromContracts = new Set<string>();
+    allMeasures
+      .filter(m => m.conversion?.hasContract && m.conversion?.contractCountry)
+      .forEach(m => {
+        m.conversion!.contractCountry.split(",").forEach(c => {
+          const trimmed = c.trim();
+          if (trimmed) exportCountriesFromContracts.add(trimmed);
+        });
+      });
+    const countryDiversification = exportCountriesFromContracts.size;
+
+    // KPI: New exporters (companies that had first export contract through support)
+    const newExportersCount = new Set(
+      allMeasures
+        .filter(m => m.conversion?.isNewExporter)
+        .map(m => {
+          const company = companies.find(c => c.supportMeasures?.some(sm => sm.id === m.id));
+          return company?.id;
+        })
+        .filter(Boolean)
+    ).size;
+
+    // Companies that hit limit (3+ services, 0 conversions)
+    const limitedCompanies = companies.filter(c => {
+      const measures = c.supportMeasures || [];
+      const serviceCount = measures.length;
+      const conversionCount = measures.filter(m => m.conversion?.hasContract).length;
+      return serviceCount >= 3 && conversionCount === 0;
+    });
+
     return {
       total,
       exporters,
@@ -985,6 +1075,15 @@ export default function CrmApp() {
       sectorCounts,
       totalExport2025,
       totalExport2024,
+      complexCount,
+      popularizationCount,
+      complexCompanies,
+      popularizationCompanies,
+      serviceTypeCounts,
+      supportedExportVolume,
+      countryDiversification,
+      newExportersCount,
+      limitedCompanies,
     };
   }, [companies]);
 
@@ -1223,11 +1322,11 @@ export default function CrmApp() {
               
               <div className="bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
                 <div>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Всего компаний в базе</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Всего СМСП в базе</span>
                   <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white mt-1">{stats.total}</h3>
                   <div className="text-xs text-slate-400 mt-2 flex items-center gap-1">
                     <Building2 className="w-3.5 h-3.5 text-indigo-500" />
-                    База компаний
+                    Субъекты МСП
                   </div>
                 </div>
                 <div className="p-3 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-xl">
@@ -1237,7 +1336,7 @@ export default function CrmApp() {
 
               <div className="bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
                 <div>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Активные экспортеры</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Активные экспортеры (СМСП)</span>
                   <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white mt-1">
                     {stats.exporters} <span className="text-xs font-normal text-slate-400">({Math.round((stats.exporters/stats.total)*100) || 0}%)</span>
                   </h3>
@@ -1280,6 +1379,84 @@ export default function CrmApp() {
               </div>
 
             </div>
+
+            {/* KPI Cards: Поддержка экспорта */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Объём поддержанного экспорта</span>
+                  <BarChart3 className="w-4 h-4 text-indigo-500" />
+                </div>
+                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
+                  {stats.supportedExportVolume.toFixed(1)} <span className="text-xs font-normal text-slate-400">млн ₽</span>
+                </h3>
+                <div className="mt-3 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${Math.min(100, (stats.supportedExportVolume / 500) * 100)}%` }} />
+                </div>
+                <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+                  <span>Факт: {stats.supportedExportVolume.toFixed(1)} млн ₽</span>
+                  <span>План: 500 млн ₽</span>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Страновая диверсификация</span>
+                  <Globe className="w-4 h-4 text-emerald-500" />
+                </div>
+                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
+                  {stats.countryDiversification} <span className="text-xs font-normal text-slate-400">стран</span>
+                </h3>
+                <div className="mt-3 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${Math.min(100, (stats.countryDiversification / 15) * 100)}%` }} />
+                </div>
+                <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+                  <span>Факт: {stats.countryDiversification} стран</span>
+                  <span>План: 15 стран</span>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Новые экспортёры</span>
+                  <Users className="w-4 h-4 text-amber-500" />
+                </div>
+                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
+                  {stats.newExportersCount} <span className="text-xs font-normal text-slate-400">компаний</span>
+                </h3>
+                <div className="mt-3 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <div className="bg-amber-500 h-full rounded-full" style={{ width: `${Math.min(100, (stats.newExportersCount / 10) * 100)}%` }} />
+                </div>
+                <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+                  <span>Факт: {stats.newExportersCount} компаний</span>
+                  <span>План: 10 компаний</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Limited companies alert */}
+            {stats.limitedCompanies.length > 0 && (
+              <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-xl p-4 flex items-center justify-between gap-3 text-red-800 dark:text-red-300">
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="w-5.5 h-5.5 text-red-600 dark:text-red-400 shrink-0" />
+                  <div>
+                    <span className="font-semibold text-sm">Достигнут лимит мер поддержки</span>
+                    <p className="text-xs text-red-700 dark:text-red-400 mt-0.5">
+                      {stats.limitedCompanies.length} компаний получили 3+ услуги без конверсии. Им требуется проверка перед выдачей новых мер.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setActiveTab("catalog");
+                    setFilters(prev => ({ ...prev, needsUpdate: "true" }));
+                  }}
+                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-all"
+                >
+                  Показать
+                </button>
+              </div>
+            )}
 
             {/* Quick Actions Panel */}
             <div className="bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -1430,50 +1607,109 @@ export default function CrmApp() {
                 </div>
               </div>
 
-              {/* MSP Size Distribution */}
+              {/* Support Services: Complex vs Popularization */}
               <div className="bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1">Размер компаний (Реестр МСП)</h4>
-                  <p className="text-xs text-slate-500">Распределение предприятий по категориям</p>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1">Получатели поддержки ЦПЭ</h4>
+                  <p className="text-xs text-slate-500">Распределение по типам услуг</p>
                 </div>
 
                 <div className="py-4 space-y-3.5">
-                  {/* Micro */}
+                  {/* Complex services */}
+                  <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
+                      <span className="text-xs font-semibold">Комплексные услуги</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        {stats.complexCompanies} компаний
+                      </span>
+                      <span className="text-[10px] text-slate-400 ml-2">({stats.complexCount} услуг)</span>
+                    </div>
+                  </div>
+
+                  {/* Service type sub-breakdown */}
+                  <div className="pl-5 space-y-1.5">
+                    {[
+                      { key: "exhibition", label: "Выставки" },
+                      { key: "business_mission", label: "Бизнес-миссии" },
+                      { key: "search_and_selection", label: "Поиск и подбор" },
+                      { key: "etp_placement", label: "Размещение на ЭТП" },
+                      { key: "reverse_business_mission", label: "Реверсные бизнес-миссии" },
+                      { key: "interregional_mission", label: "Межрегиональные бизнес-миссии" },
+                    ].map(item => (
+                      <div key={item.key} className="flex items-center justify-between text-[11px]">
+                        <span className="text-slate-500">{item.label}</span>
+                        <span className="font-semibold text-slate-600 dark:text-slate-400">
+                          {stats.serviceTypeCounts[item.key] || 0}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Popularization */}
                   <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
                     <div className="flex items-center gap-2">
                       <div className="w-2.5 h-2.5 rounded-full bg-teal-400" />
-                      <span className="text-xs font-semibold">Микропредприятия</span>
+                      <span className="text-xs font-semibold">Популяризация экспорта</span>
                     </div>
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      {stats.mspCategories["Микро"] || 0} шт.
-                    </span>
+                    <div className="text-right">
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        {stats.popularizationCompanies} компаний
+                      </span>
+                      <span className="text-[10px] text-slate-400 ml-2">({stats.popularizationCount} услуг)</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-100 dark:border-slate-900 pt-3 text-xs text-slate-400 italic">
+                  * Данные из карточек компаний (раздел «Меры поддержки»)
+                </div>
+              </div>
+
+              {/* Service Categories SVG Donut */}
+              <div className="bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1">Услуги ЦПЭ</h4>
+                  <p className="text-xs text-slate-500">Соотношение комплексных и популяризационных услуг</p>
+                </div>
+                
+                <div className="py-6 flex justify-center items-center gap-4">
+                  <div className="relative w-36 h-36">
+                    <svg viewBox="0 0 36 36" className="w-full h-full">
+                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#e2e8f0" strokeWidth="3" />
+                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#6366f1" strokeWidth="4.2" 
+                        strokeDasharray={`${(stats.complexCount / Math.max(1, stats.complexCount + stats.popularizationCount)) * 100} 100`} 
+                        strokeDashoffset="25" />
+                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#14b8a6" strokeWidth="4.2" 
+                        strokeDasharray={`${(stats.popularizationCount / Math.max(1, stats.complexCount + stats.popularizationCount)) * 100} 100`} 
+                        strokeDashoffset={25 - (stats.complexCount / Math.max(1, stats.complexCount + stats.popularizationCount)) * 100} />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-xl font-black text-slate-800 dark:text-slate-100">{stats.complexCount + stats.popularizationCount}</span>
+                      <span className="text-[9px] text-slate-400 uppercase tracking-widest">Всего услуг</span>
+                    </div>
                   </div>
 
-                  {/* Малое */}
-                  <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                  <div className="space-y-2 text-xs">
                     <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                      <span className="text-xs font-semibold">Малые предприятия</span>
+                      <div className="w-3 h-3 bg-indigo-500 rounded-full" />
+                      <div>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">Комплексные: {stats.complexCount}</span>
+                      </div>
                     </div>
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      {stats.mspCategories["Малое"] || 0} шт.
-                    </span>
-                  </div>
-
-                  {/* Среднее */}
-                  <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
                     <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-indigo-600" />
-                      <span className="text-xs font-semibold">Средние предприятия</span>
+                      <div className="w-3 h-3 bg-teal-500 rounded-full" />
+                      <div>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">Популяризация: {stats.popularizationCount}</span>
+                      </div>
                     </div>
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      {stats.mspCategories["Среднее"] || 0} шт.
-                    </span>
                   </div>
                 </div>
 
                 <div className="text-xs text-slate-400 border-t border-slate-100 dark:border-slate-900 pt-3">
-                  * Порог классификации: выручка и среднесписочная численность.
+                  Комплексные: выставки, бизнес-миссии, поиск и подбор, ЭТП, реверсные и межрегиональные миссии
                 </div>
               </div>
 
@@ -2744,9 +2980,28 @@ export default function CrmApp() {
               {companyDetailTab === "support" && (
                 <div className="space-y-6">
                   
+                  {/* Limit indicator */}
+                  {(() => {
+                    const measures = selectedCompany.supportMeasures || [];
+                    const serviceCount = measures.length;
+                    const conversionCount = measures.filter(m => m.conversion?.hasContract).length;
+                    const limitReached = serviceCount >= 3 && conversionCount === 0;
+                    return limitReached ? (
+                      <div className="bg-red-50 dark:bg-red-950/20 border-2 border-red-300 dark:border-red-900 rounded-xl p-4 flex items-start gap-3">
+                        <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                        <div>
+                          <h5 className="text-xs font-bold text-red-800 dark:text-red-300">Лимит мер поддержки достигнут</h5>
+                          <p className="text-[11px] text-red-700 dark:text-red-400 mt-1">
+                            Компания получила {serviceCount} услуг(и) без конверсии. Для получения новых мер поддержки требуется повторная проверка.
+                          </p>
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
+
                   {/* List of existing support measures */}
                   <div className="space-y-3">
-                    <h4 className="text-xs font-bold uppercase text-slate-500">Полученные меры поддержки</h4>
+                    <h4 className="text-xs font-bold uppercase text-slate-500">Полученные меры поддержки ЦПЭ</h4>
                     
                     {(!selectedCompany.supportMeasures || selectedCompany.supportMeasures.length === 0) ? (
                       <p className="text-xs text-slate-400 italic bg-slate-50 dark:bg-slate-900 p-4 rounded-xl">
@@ -2754,34 +3009,77 @@ export default function CrmApp() {
                       </p>
                     ) : (
                       <div className="space-y-2">
-                        {selectedCompany.supportMeasures.map((m) => (
-                          <div
-                            key={m.id}
-                            className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex justify-between items-center text-xs"
-                          >
-                            <div>
-                              <p className="font-bold text-slate-900 dark:text-white">{m.name}</p>
-                              <div className="flex gap-2 text-[10px] text-slate-400 mt-1">
-                                <span>Дата: {m.date}</span>
-                                <span>•</span>
-                                <span>Сумма: {m.amount ? `${m.amount.toLocaleString("ru-RU")} ₽` : "н/д"}</span>
+                        {selectedCompany.supportMeasures.map((m) => {
+                          const svcTypeLabels: Record<string, string> = {
+                            exhibition: "Выставка",
+                            business_mission: "Бизнес-миссия",
+                            search_and_selection: "Поиск и подбор",
+                            etp_placement: "Размещение на ЭТП",
+                            reverse_business_mission: "Реверсная бизнес-миссия",
+                            interregional_mission: "Межрегиональная бизнес-миссия",
+                            other: "Прочее",
+                          };
+                          const hasConversion = m.conversion?.hasContract;
+                          return (
+                            <div
+                              key={m.id}
+                              className={`p-3 rounded-xl border text-xs ${
+                                hasConversion
+                                  ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/60"
+                                  : "bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800"
+                              }`}
+                            >
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-bold text-slate-900 dark:text-white">{m.name}</p>
+                                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-400 mt-1">
+                                    <span>Тип: {svcTypeLabels[m.serviceType] || m.serviceType}</span>
+                                    <span>•</span>
+                                    <span>Категория: {m.serviceCategory === "complex" ? "Комплексная" : "Популяризация"}</span>
+                                    <span>•</span>
+                                    <span>Запрос: {m.requestDate || "н/д"}</span>
+                                    <span>•</span>
+                                    <span>Получение: {m.receiptDate || "н/д"}</span>
+                                    <span>•</span>
+                                    <span>Сумма: {m.amount ? `${m.amount.toLocaleString("ru-RU")} ₽` : "н/д"}</span>
+                                  </div>
+                                  {hasConversion && (
+                                    <div className="mt-2 bg-emerald-100 dark:bg-emerald-950/40 p-2 rounded-lg border border-emerald-200 dark:border-emerald-900/60">
+                                      <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300">✓ Конверсия (контракт)</p>
+                                      <div className="flex flex-wrap gap-x-3 text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">
+                                        <span>Страна: {m.conversion!.contractCountry}</span>
+                                        <span>•</span>
+                                        <span>Сумма: {m.conversion!.contractAmount.toLocaleString("ru-RU")} ₽</span>
+                                        <span>•</span>
+                                        <span>Дата: {m.conversion!.contractDate}</span>
+                                        {m.conversion!.isNewExporter && (
+                                          <span className="font-bold">• Новый экспортёр</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 ml-2">
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                    m.status === "Выполнено" ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300" :
+                                    m.status === "Одобрено" ? "bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300" :
+                                    "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300"
+                                  }`}>
+                                    {m.status}
+                                  </span>
+                                  {currentRole !== "analyst" && (
+                                    <button
+                                      onClick={() => handleDeleteSupportMeasure(m.id)}
+                                      className="text-red-500 hover:text-red-700 p-1"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded text-[10px] font-bold">
-                                {m.status}
-                              </span>
-                              {currentRole !== "analyst" && (
-                                <button
-                                  onClick={() => handleDeleteSupportMeasure(m.id)}
-                                  className="text-red-500 hover:text-red-700 p-1"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -2797,45 +3095,116 @@ export default function CrmApp() {
                           required
                           value={newMeasureName}
                           onChange={e => setNewMeasureName(e.target.value)}
-                          placeholder="Название меры (например: Субсидия на транспортировку)"
+                          placeholder="Название услуги"
                           className="w-full text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2 rounded-lg"
                         />
 
                         <div className="grid grid-cols-2 gap-2">
-                          <input
-                            type="date"
-                            value={newMeasureDate}
-                            onChange={e => setNewMeasureDate(e.target.value)}
+                          <select
+                            value={newMeasureServiceType}
+                            onChange={e => setNewMeasureServiceType(e.target.value)}
                             className="text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2 rounded-lg"
-                          />
-                          <input
-                            type="number"
-                            value={newMeasureAmount || ""}
-                            onChange={e => setNewMeasureAmount(Number(e.target.value) || 0)}
-                            placeholder="Объем (руб)"
-                            className="text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2 rounded-lg"
-                          />
-                        </div>
-
-                        <div className="flex justify-between items-center gap-2">
+                          >
+                            <option value="exhibition">Выставка</option>
+                            <option value="business_mission">Бизнес-миссия</option>
+                            <option value="search_and_selection">Поиск и подбор</option>
+                            <option value="etp_placement">Размещение на ЭТП</option>
+                            <option value="reverse_business_mission">Реверсная бизнес-миссия</option>
+                            <option value="interregional_mission">Межрегиональная бизнес-миссия</option>
+                            <option value="other">Прочее (популяризация)</option>
+                          </select>
                           <select
                             value={newMeasureStatus}
                             onChange={e => setNewMeasureStatus(e.target.value)}
-                            className="text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2 rounded-lg flex-1"
+                            className="text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2 rounded-lg"
                           >
                             <option value="Одобрено">Одобрено</option>
                             <option value="Выполнено">Выполнено</option>
                             <option value="На рассмотрении">На рассмотрении</option>
                           </select>
-
-                          <button
-                            type="submit"
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 px-4 rounded-lg flex items-center gap-1"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                            Добавить
-                          </button>
                         </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="date"
+                            value={newMeasureRequestDate}
+                            onChange={e => setNewMeasureRequestDate(e.target.value)}
+                            className="text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2 rounded-lg"
+                          />
+                          <input
+                            type="date"
+                            value={newMeasureReceiptDate}
+                            onChange={e => setNewMeasureReceiptDate(e.target.value)}
+                            className="text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2 rounded-lg"
+                          />
+                        </div>
+
+                        <input
+                          type="number"
+                          value={newMeasureAmount || ""}
+                          onChange={e => setNewMeasureAmount(Number(e.target.value) || 0)}
+                          placeholder="Сумма (руб)"
+                          className="w-full text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2 rounded-lg"
+                        />
+
+                        {/* Conversion section */}
+                        <div className="border-t border-slate-200 dark:border-slate-800 pt-3">
+                          <label className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">
+                            <input
+                              type="checkbox"
+                              checked={newMeasureConversion}
+                              onChange={e => setNewMeasureConversion(e.target.checked)}
+                              className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            По итогу услуги заключён экспортный контракт
+                          </label>
+
+                          {newMeasureConversion && (
+                            <div className="space-y-2 pl-6">
+                              <div className="grid grid-cols-2 gap-2">
+                                <input
+                                  type="text"
+                                  value={newMeasureContractCountry}
+                                  onChange={e => setNewMeasureContractCountry(e.target.value)}
+                                  placeholder="Страна контракта"
+                                  className="text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2 rounded-lg"
+                                />
+                                <input
+                                  type="number"
+                                  value={newMeasureContractAmount || ""}
+                                  onChange={e => setNewMeasureContractAmount(Number(e.target.value) || 0)}
+                                  placeholder="Сумма контракта (руб)"
+                                  className="text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2 rounded-lg"
+                                />
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <input
+                                  type="date"
+                                  value={newMeasureContractDate}
+                                  onChange={e => setNewMeasureContractDate(e.target.value)}
+                                  className="text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2 rounded-lg"
+                                />
+                                <label className="flex items-center gap-2 text-[11px] text-slate-500">
+                                  <input
+                                    type="checkbox"
+                                    checked={newMeasureIsNewExporter}
+                                    onChange={e => setNewMeasureIsNewExporter(e.target.checked)}
+                                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                  />
+                                  Новый экспортёр
+                                </label>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <button
+                          type="submit"
+                          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-1"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Добавить меру поддержки
+                        </button>
                       </div>
                     </form>
                   )}
