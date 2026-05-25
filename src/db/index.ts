@@ -190,6 +190,14 @@ export async function ensureDatabaseReady() {
           updated_at timestamp NOT NULL DEFAULT now()
         )
       `);
+
+      await db.execute(sql`
+        ALTER TABLE event_meetings ADD COLUMN IF NOT EXISTS stage text NOT NULL DEFAULT 'selected'
+      `);
+
+      await db.execute(sql`
+        ALTER TABLE event_meetings ADD COLUMN IF NOT EXISTS assigned_employee text NOT NULL DEFAULT ''
+      `);
     })();
   }
 

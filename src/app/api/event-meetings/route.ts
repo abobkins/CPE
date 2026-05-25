@@ -20,6 +20,8 @@ export async function POST(req: NextRequest) {
       matchScore: 0,
       matchType: "manual",
       status: "suggested",
+      stage: "selected",
+      assignedEmployee: "",
       notes: notes || "Добавлено вручную",
     }).returning();
 
@@ -40,6 +42,8 @@ export async function PATCH(req: NextRequest) {
 
     const updates: Record<string, any> = { updatedAt: new Date() };
     if (status) updates.status = status;
+    if (body.stage) updates.stage = body.stage;
+    if (body.assignedEmployee !== undefined) updates.assignedEmployee = body.assignedEmployee;
     if (notes !== undefined) updates.notes = notes;
 
     const result = await db.update(eventMeetings).set(updates).where(eq(eventMeetings.id, parseInt(id))).returning();

@@ -132,6 +132,8 @@ export const eventMeetings = pgTable("event_meetings", {
   matchScore: doublePrecision("match_score").default(0).notNull(),
   matchType: text("match_type").default("auto").notNull(), // auto, manual
   status: text("status").default("suggested").notNull(),
+  stage: text("stage").default("selected").notNull(),
+  assignedEmployee: text("assigned_employee").default("").notNull(),
   notes: text("notes").default("").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
