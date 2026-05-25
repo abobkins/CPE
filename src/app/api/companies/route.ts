@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
     const categoryMsp = searchParams.get("categoryMsp") || "";
     const needsUpdate = searchParams.get("needsUpdate") || "";
     const hasContacts = searchParams.get("hasContacts") || "";
+    const tnved = searchParams.get("tnved") || "";
 
     // Fetch all companies to perform filtering on-memory if complex, 
     // but since we want to be fast and allow advanced search, let's fetch all or write queries.
@@ -44,7 +45,8 @@ export async function GET(req: NextRequest) {
         (c.sector && c.sector.toLowerCase().includes(q)) ||
         (c.contactMinprom && c.contactMinprom.toLowerCase().includes(q)) ||
         (c.contactCpe && c.contactCpe.toLowerCase().includes(q)) ||
-        (c.notes && c.notes.toLowerCase().includes(q))
+        (c.notes && c.notes.toLowerCase().includes(q)) ||
+        (c.tnved && c.tnved.toLowerCase().includes(q))
       );
     }
 
@@ -84,6 +86,12 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // TN VED filter
+    if (tnved) {
+      const q = tnved.toLowerCase().trim();
+      filtered = filtered.filter(c => c.tnved && c.tnved.toLowerCase().includes(q));
+    }
+
     return NextResponse.json(filtered);
   } catch (error: any) {
     console.error("Error in GET /api/companies:", error);
@@ -116,6 +124,7 @@ export async function POST(req: NextRequest) {
       exportVolume2024,
       exportVolume2025,
       exportCountries,
+      tnved,
       notes,
       customFields,
     } = body;
@@ -152,6 +161,7 @@ export async function POST(req: NextRequest) {
       exportVolume2024: Number(exportVolume2024) || 0,
       exportVolume2025: Number(exportVolume2025) || 0,
       exportCountries: exportCountries || "",
+      tnved: tnved || "",
       notes: notes || "",
       customFields: customFields || {},
       supportMeasures: [],

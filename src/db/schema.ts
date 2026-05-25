@@ -28,7 +28,8 @@ export const companies = pgTable("companies", {
   exportVolume2024: doublePrecision("export_volume_2024").default(0).notNull(),
   exportVolume2025: doublePrecision("export_volume_2025").default(0).notNull(),
   exportCountries: text("export_countries").default("").notNull(), // e.g., "Китай, Казахстан"
-  
+  tnved: text("tnved").default("").notNull(), // e.g., "8471, 8473, 8523"
+
   // Меры поддержки
   // Array of: { id: string, name: string, date: string, status: string, amount?: number }
   supportMeasures: jsonb("support_measures").default([]).notNull(),
@@ -82,5 +83,14 @@ export const applications = pgTable("applications", {
   comment: text("comment"),
   rawData: jsonb("raw_data").default({}).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const kpiTargets = pgTable("kpi_targets", {
+  id: serial("id").primaryKey(),
+  year: serial("year").notNull().unique(),
+  supportedExportVolume: doublePrecision("supported_export_volume").default(500).notNull(),
+  countryDiversification: doublePrecision("country_diversification").default(15).notNull(),
+  newExporters: doublePrecision("new_exporters").default(10).notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

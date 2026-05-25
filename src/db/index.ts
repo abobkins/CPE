@@ -116,6 +116,21 @@ export async function ensureDatabaseReady() {
           updated_at timestamp NOT NULL DEFAULT now()
         )
       `);
+
+      await db.execute(sql`
+        ALTER TABLE companies ADD COLUMN IF NOT EXISTS tnved text NOT NULL DEFAULT ''
+      `);
+
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS kpi_targets (
+          id serial PRIMARY KEY,
+          year integer NOT NULL UNIQUE,
+          supported_export_volume double precision NOT NULL DEFAULT 500,
+          country_diversification double precision NOT NULL DEFAULT 15,
+          new_exporters double precision NOT NULL DEFAULT 10,
+          updated_at timestamp NOT NULL DEFAULT now()
+        )
+      `);
     })();
   }
 

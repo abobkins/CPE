@@ -103,6 +103,7 @@ interface Company {
   exportVolume2024: number;
   exportVolume2025: number;
   exportCountries: string;
+  tnved: string;
   supportMeasures: SupportMeasure[];
   interactions: Interaction[];
   tasks: Task[];
@@ -143,6 +144,14 @@ interface Application {
   updatedAt: string;
 }
 
+interface KpiTarget {
+  id: number;
+  year: number;
+  supportedExportVolume: number;
+  countryDiversification: number;
+  newExporters: number;
+}
+
 export default function CrmApp() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [customFields, setCustomFields] = useState<CustomFieldDef[]>([]);
@@ -152,7 +161,7 @@ export default function CrmApp() {
   // App settings
   const [darkMode, setDarkMode] = useState(false);
   const [currentRole, setCurrentRole] = useState<"admin" | "manager" | "analyst">("admin");
-  const [activeTab, setActiveTab] = useState<"dashboard" | "catalog" | "directory" | "applications" | "custom_fields">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "catalog" | "directory" | "applications" | "custom_fields" | "kpi_targets">("dashboard");
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -164,6 +173,7 @@ export default function CrmApp() {
     categoryMsp: "",
     needsUpdate: "",
     hasContacts: "",
+    tnved: "",
   });
 
   // Selected companies for bulk actions
@@ -202,6 +212,7 @@ export default function CrmApp() {
     exportVolume2024: 0,
     exportVolume2025: 0,
     exportCountries: "",
+    tnved: "",
     notes: "",
     customFields: {} as Record<string, any>,
   });
@@ -237,6 +248,13 @@ export default function CrmApp() {
   const [newMeasureContractAmount, setNewMeasureContractAmount] = useState(0);
   const [newMeasureContractDate, setNewMeasureContractDate] = useState("");
   const [newMeasureIsNewExporter, setNewMeasureIsNewExporter] = useState(false);
+
+  // KPI Targets state
+  const [kpiTargets, setKpiTargets] = useState<KpiTarget>({ id: 0, year: 2026, supportedExportVolume: 500, countryDiversification: 15, newExporters: 10 });
+  const [kpiEditVolume, setKpiEditVolume] = useState(500);
+  const [kpiEditCountries, setKpiEditCountries] = useState(15);
+  const [kpiEditNewExporters, setKpiEditNewExporters] = useState(10);
+  const [kpiEditYear, setKpiEditYear] = useState(2026);
 
   // Applications state
   const [applications, setApplications] = useState<Application[]>([]);
@@ -297,7 +315,7 @@ export default function CrmApp() {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      const compRes = await fetch(`/api/companies?search=${encodeURIComponent(searchQuery)}&sphere=${filters.sphere}&statusExporter=${filters.statusExporter}&cpeCooperation=${filters.cpeCooperation}&categoryMsp=${filters.categoryMsp}&needsUpdate=${filters.needsUpdate}&hasContacts=${filters.hasContacts}`);
+      const compRes = await fetch(`/api/companies?search=${encodeURIComponent(searchQuery)}&sphere=${filters.sphere}&statusExporter=${filters.statusExporter}&cpeCooperation=${filters.cpeCooperation}&categoryMsp=${filters.categoryMsp}&needsUpdate=${filters.needsUpdate}&hasContacts=${filters.hasContacts}&tnved=${encodeURIComponent(filters.tnved)}`);
       if (!compRes.ok) throw new Error("Не удалось загрузить реестр компаний");
       const compData = await compRes.json();
       setCompanies(compData);
@@ -341,6 +359,27 @@ export default function CrmApp() {
   useEffect(() => {
     fetchApplications();
   }, [appsFilterStatus, appsSearch]);
+
+  // Load KPI targets
+  const fetchKpiTargets = async () => {
+    try {
+      const res = await fetch("/api/kpi-targets");
+      if (res.ok) {
+        const data = await res.json();
+        setKpiTargets(data);
+        setKpiEditVolume(data.supportedExportVolume);
+        setKpiEditCountries(data.countryDiversification);
+        setKpiEditNewExporters(data.newExporters);
+        setKpiEditYear(data.year);
+      }
+    } catch (e) {
+      console.error("Ошибка загрузки KPI:", e);
+    }
+  };
+
+  useEffect(() => {
+    fetchKpiTargets();
+  }, []);
 
   // Load single company if selected
   const fetchSingleCompany = async (id: number) => {
@@ -608,6 +647,7 @@ export default function CrmApp() {
           exportVolume2024: 0,
           exportVolume2025: 0,
           exportCountries: "",
+          tnved: "",
           notes: "",
           customFields: {},
         });
@@ -753,7 +793,8 @@ export default function CrmApp() {
       "Экспорт 2023 (млн руб)",
       "Экспорт 2024 (млн руб)",
       "Экспорт 2025 (млн руб)",
-      "Страны экспорта"
+      "Страны экспорта",
+      "ТН ВЭД"
     ];
     
     // Add custom fields to headers
@@ -785,7 +826,8 @@ export default function CrmApp() {
         c.exportVolume2023,
         c.exportVolume2024,
         c.exportVolume2025,
-        `"${(c.exportCountries || "").replace(/"/g, '""')}"`
+        `"${(c.exportCountries || "").replace(/"/g, '""')}"`,
+        `"${(c.tnved || "").replace(/"/g, '""')}"`
       ];
 
       // Add custom fields data
@@ -899,6 +941,7 @@ export default function CrmApp() {
       const phoneCpeIdx = findHeader("телефон (цпэ", "телефон цпэ");
       const contactMinIdx = findHeader("контактное лицо (минпром", "контакт минпром", "лицо минпром");
       const contactCpeIdx = findHeader("контактное лицо (цпэ", "контакт цпэ", "лицо цпэ");
+      const tnvedIdx = findHeader("тн вэд", "код тн вэд", "коды тн вэд");
 
       for (let i = 1; i < lines.length; i++) {
         const values = parseCsvLine(lines[i]);
@@ -920,6 +963,7 @@ export default function CrmApp() {
         const phoneCpe = getValue(values, phoneCpeIdx);
         const contactMinprom = getValue(values, contactMinIdx);
         const contactCpe = getValue(values, contactCpeIdx);
+        const tnved = getValue(values, tnvedIdx);
 
         if (!inn && !name) continue;
 
@@ -944,6 +988,7 @@ export default function CrmApp() {
             phoneCpe,
             contactMinprom,
             contactCpe,
+            tnved,
             notes: "Импортировано из Excel/CSV-файла",
             userName: `Импорт Excel/CSV (${currentRole})`
           })
@@ -1311,6 +1356,17 @@ export default function CrmApp() {
               {customFields.length}
             </span>
           </button>
+          <button
+            onClick={() => setActiveTab("kpi_targets")}
+            className={`py-3 px-5 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
+              activeTab === "kpi_targets"
+                ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
+                : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+            }`}
+          >
+            <BarChart3 className="w-4.5 h-4.5" />
+            Плановые показатели
+          </button>
         </div>
 
         {/* -------------------- 1. DASHBOARD TAB -------------------- */}
@@ -1391,11 +1447,11 @@ export default function CrmApp() {
                   {stats.supportedExportVolume.toFixed(1)} <span className="text-xs font-normal text-slate-400">млн ₽</span>
                 </h3>
                 <div className="mt-3 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${Math.min(100, (stats.supportedExportVolume / 500) * 100)}%` }} />
+                  <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${Math.min(100, (stats.supportedExportVolume / Math.max(1, kpiTargets.supportedExportVolume)) * 100)}%` }} />
                 </div>
                 <div className="flex justify-between text-[10px] text-slate-400 mt-1">
                   <span>Факт: {stats.supportedExportVolume.toFixed(1)} млн ₽</span>
-                  <span>План: 500 млн ₽</span>
+                  <span>План: {kpiTargets.supportedExportVolume} млн ₽</span>
                 </div>
               </div>
 
@@ -1408,11 +1464,11 @@ export default function CrmApp() {
                   {stats.countryDiversification} <span className="text-xs font-normal text-slate-400">стран</span>
                 </h3>
                 <div className="mt-3 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${Math.min(100, (stats.countryDiversification / 15) * 100)}%` }} />
+                  <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${Math.min(100, (stats.countryDiversification / Math.max(1, kpiTargets.countryDiversification)) * 100)}%` }} />
                 </div>
                 <div className="flex justify-between text-[10px] text-slate-400 mt-1">
                   <span>Факт: {stats.countryDiversification} стран</span>
-                  <span>План: 15 стран</span>
+                  <span>План: {kpiTargets.countryDiversification} стран</span>
                 </div>
               </div>
 
@@ -1425,11 +1481,11 @@ export default function CrmApp() {
                   {stats.newExportersCount} <span className="text-xs font-normal text-slate-400">компаний</span>
                 </h3>
                 <div className="mt-3 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div className="bg-amber-500 h-full rounded-full" style={{ width: `${Math.min(100, (stats.newExportersCount / 10) * 100)}%` }} />
+                  <div className="bg-amber-500 h-full rounded-full" style={{ width: `${Math.min(100, (stats.newExportersCount / Math.max(1, kpiTargets.newExporters)) * 100)}%` }} />
                 </div>
                 <div className="flex justify-between text-[10px] text-slate-400 mt-1">
                   <span>Факт: {stats.newExportersCount} компаний</span>
-                  <span>План: 10 компаний</span>
+                  <span>План: {kpiTargets.newExporters} компаний</span>
                 </div>
               </div>
             </div>
@@ -1502,111 +1558,6 @@ export default function CrmApp() {
             {/* Graphs & Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
-              {/* Spheres distribution - SVG Donut */}
-              <div className="bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1">Сферы деятельности</h4>
-                  <p className="text-xs text-slate-500">Количество компаний по основным сферам</p>
-                </div>
-                
-                {/* SVG Pie Chart */}
-                <div className="py-6 flex justify-center items-center gap-4">
-                  <div className="relative w-36 h-36">
-                    {/* Simplified visual representations of chart */}
-                    <svg viewBox="0 0 36 36" className="w-full h-full">
-                      {/* Industrial: sphereCounts['Промышленность'] */}
-                      {/* Agricultural: sphereCounts['АПК'] */}
-                      {/* Proчие: sphereCounts['Прочие'] */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#e2e8f0" strokeWidth="3" />
-                      
-                      {/* Draw segments */}
-                      {/* Industry segment (typically ~50%) */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f59e0b" strokeWidth="4.2" strokeDasharray="50 100" strokeDashoffset="25" />
-                      {/* APK segment (typically ~35%) */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#10b981" strokeWidth="4.2" strokeDasharray="35 100" strokeDashoffset="75" />
-                      {/* Prochie segment (typically ~15%) */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#8b5cf6" strokeWidth="4.2" strokeDasharray="15 100" strokeDashoffset="10" />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-xl font-black text-slate-800 dark:text-slate-100">{stats.total}</span>
-                      <span className="text-[9px] text-slate-400 uppercase tracking-widest">Компаний</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 text-xs">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-amber-500 rounded-full" />
-                      <div>
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">Пром-сть: {stats.sphereCounts["Промышленность"] || 0}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-emerald-500 rounded-full" />
-                      <div>
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">АПК: {stats.sphereCounts["АПК"] || 0}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-purple-500 rounded-full" />
-                      <div>
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">Прочие: {stats.sphereCounts["Прочие"] || 0}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t border-slate-100 dark:border-slate-900 pt-3 text-xs text-slate-400 italic">
-                  * Нажмите на сферу во вкладке каталог для быстрой фильтрации
-                </div>
-              </div>
-
-              {/* Status Exporter - Bars representation */}
-              <div className="bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1">Экспортный статус компаний</h4>
-                  <p className="text-xs text-slate-500">Распределение и планы по экспорту</p>
-                </div>
-
-                <div className="py-4 space-y-4">
-                  {/* Exporter */}
-                  <div>
-                    <div className="flex justify-between text-xs mb-1.5 font-medium">
-                      <span className="text-emerald-600 dark:text-emerald-400">Экспортируют сейчас</span>
-                      <span>{stats.exporters} компаний ({Math.round(stats.exporters / (stats.total || 1) * 100)}%)</span>
-                    </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
-                      <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${(stats.exporters / (stats.total || 1)) * 100}%` }} />
-                    </div>
-                  </div>
-
-                  {/* Planning 2025 */}
-                  <div>
-                    <div className="flex justify-between text-xs mb-1.5 font-medium">
-                      <span className="text-blue-600 dark:text-blue-400">Планируют экспорт (2025 г.)</span>
-                      <span>{stats.planning2025} компаний ({Math.round(stats.planning2025 / (stats.total || 1) * 100)}%)</span>
-                    </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
-                      <div className="bg-blue-500 h-full rounded-full" style={{ width: `${(stats.planning2025 / (stats.total || 1)) * 100}%` }} />
-                    </div>
-                  </div>
-
-                  {/* Non-exporter */}
-                  <div>
-                    <div className="flex justify-between text-xs mb-1.5 font-medium text-slate-500">
-                      <span>Не экспортируют</span>
-                      <span>{stats.total - stats.exporters - stats.planning2025} компаний</span>
-                    </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
-                      <div className="bg-slate-400 h-full rounded-full" style={{ width: `${((stats.total - stats.exporters - stats.planning2025) / (stats.total || 1)) * 100}%` }} />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t border-slate-100 dark:border-slate-900 pt-3 text-xs text-slate-500">
-                  Меры поддержки сфокусированы на выводе не-экспортеров на внешние рынки.
-                </div>
-              </div>
-
               {/* Support Services: Complex vs Popularization */}
               <div className="bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
                 <div>
@@ -1821,6 +1772,7 @@ export default function CrmApp() {
                       categoryMsp: "",
                       needsUpdate: "",
                       hasContacts: "",
+                      tnved: "",
                     })}
                     className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
                   >
@@ -1914,6 +1866,18 @@ export default function CrmApp() {
                       <option value="true">Требует обновления данных</option>
                       <option value="false">Актуальные данные</option>
                     </select>
+                  </div>
+
+                  {/* TN VED filter */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">Код ТН ВЭД</label>
+                    <input
+                      type="text"
+                      value={filters.tnved || ""}
+                      onChange={e => setFilters(prev => ({ ...prev, tnved: e.target.value }))}
+                      placeholder="Например: 8471"
+                      className="w-full text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2 rounded-xl focus:outline-indigo-500 text-slate-700 dark:text-slate-300 font-mono"
+                    />
                   </div>
 
                 </div>
@@ -2047,6 +2011,7 @@ export default function CrmApp() {
                           <th className="py-3 px-4">Компания</th>
                           <th className="py-3 px-4">ИНН</th>
                           <th className="py-3 px-4">Сфера / Отрасль</th>
+                          <th className="py-3 px-4">ТН ВЭД</th>
                           <th className="py-3 px-4">Экспорт</th>
                           <th className="py-3 px-4">ЦПЭ</th>
                           <th className="py-3 px-4">МСП</th>
@@ -2105,6 +2070,10 @@ export default function CrmApp() {
                                   </span>
                                   <span className="text-[10px] text-slate-400 truncate max-w-[140px]">{c.sector}</span>
                                 </div>
+                              </td>
+
+                              <td className="py-3 px-4">
+                                <span className="font-mono text-[10px] text-indigo-600 dark:text-indigo-400">{c.tnved || "—"}</span>
                               </td>
 
                               <td className="py-3 px-4">
@@ -2199,6 +2168,9 @@ export default function CrmApp() {
                           <div className="flex flex-wrap gap-1.5 mt-3">
                             <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] text-slate-600 dark:text-slate-400 font-bold">
                               {c.sphere}
+                            </span>
+                            <span className="px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950 text-[10px] text-indigo-600 dark:text-indigo-400 font-mono">
+                              {c.tnved || "—"}
                             </span>
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                               c.statusExporter === "экспортер" ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300" : "bg-slate-100 dark:bg-slate-800 text-slate-600"
@@ -2600,6 +2572,132 @@ export default function CrmApp() {
           </div>
         )}
 
+        {/* -------------------- 6. KPI TARGETS TAB -------------------- */}
+        {activeTab === "kpi_targets" && (
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+              <h3 className="text-base font-bold mb-1">Плановые показатели KPI</h3>
+              <p className="text-xs text-slate-500 mb-6">Установите целевые значения для текущего года. Фактические показатели рассчитываются автоматически из данных реестра.</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div className="bg-indigo-50 dark:bg-indigo-950/20 p-5 rounded-xl border border-indigo-200 dark:border-indigo-900/60">
+                  <div className="flex items-center gap-2 mb-3">
+                    <BarChart3 className="w-5 h-5 text-indigo-600" />
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Объём поддержанного экспорта</span>
+                  </div>
+                  <div className="text-xs text-slate-500 mb-2">Факт: {stats.supportedExportVolume.toFixed(1)} млн ₽</div>
+                  <input
+                    type="number"
+                    value={kpiEditVolume}
+                    onChange={e => setKpiEditVolume(Number(e.target.value) || 0)}
+                    className="w-full text-xs p-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg"
+                    placeholder="План, млн ₽"
+                  />
+                </div>
+
+                <div className="bg-emerald-50 dark:bg-emerald-950/20 p-5 rounded-xl border border-emerald-200 dark:border-emerald-900/60">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Globe className="w-5 h-5 text-emerald-600" />
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Страновая диверсификация</span>
+                  </div>
+                  <div className="text-xs text-slate-500 mb-2">Факт: {stats.countryDiversification} стран</div>
+                  <input
+                    type="number"
+                    value={kpiEditCountries}
+                    onChange={e => setKpiEditCountries(Number(e.target.value) || 0)}
+                    className="w-full text-xs p-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg"
+                    placeholder="План, стран"
+                  />
+                </div>
+
+                <div className="bg-amber-50 dark:bg-amber-950/20 p-5 rounded-xl border border-amber-200 dark:border-amber-900/60">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Users className="w-5 h-5 text-amber-600" />
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Новые экспортёры</span>
+                  </div>
+                  <div className="text-xs text-slate-500 mb-2">Факт: {stats.newExportersCount} компаний</div>
+                  <input
+                    type="number"
+                    value={kpiEditNewExporters}
+                    onChange={e => setKpiEditNewExporters(Number(e.target.value) || 0)}
+                    className="w-full text-xs p-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg"
+                    placeholder="План, компаний"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <label className="text-xs font-semibold text-slate-500">Год:</label>
+                <input
+                  type="number"
+                  value={kpiEditYear}
+                  onChange={e => setKpiEditYear(Number(e.target.value) || 2026)}
+                  className="text-xs p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg w-24"
+                />
+                <button
+                  onClick={async () => {
+                    try {
+                      const res = await fetch("/api/kpi-targets", {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          year: kpiEditYear,
+                          supportedExportVolume: kpiEditVolume,
+                          countryDiversification: kpiEditCountries,
+                          newExporters: kpiEditNewExporters,
+                        }),
+                      });
+                      if (res.ok) {
+                        const data = await res.json();
+                        setKpiTargets(data);
+                        alert("Плановые показатели сохранены");
+                      }
+                    } catch (e) {
+                      console.error(e);
+                    }
+                  }}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 px-5 rounded-xl transition-all"
+                >
+                  Сохранить плановые показатели
+                </button>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-900">
+                <h4 className="text-sm font-bold mb-3">Выполнение KPI</h4>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="font-semibold">Объём поддержанного экспорта</span>
+                      <span>{Math.round(Math.min(100, (stats.supportedExportVolume / Math.max(1, kpiTargets.supportedExportVolume)) * 100))}%</span>
+                    </div>
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-3 rounded-full overflow-hidden">
+                      <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${Math.min(100, (stats.supportedExportVolume / Math.max(1, kpiTargets.supportedExportVolume)) * 100)}%` }} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="font-semibold">Страновая диверсификация</span>
+                      <span>{Math.round(Math.min(100, (stats.countryDiversification / Math.max(1, kpiTargets.countryDiversification)) * 100))}%</span>
+                    </div>
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-3 rounded-full overflow-hidden">
+                      <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${Math.min(100, (stats.countryDiversification / Math.max(1, kpiTargets.countryDiversification)) * 100)}%` }} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="font-semibold">Новые экспортёры</span>
+                      <span>{Math.round(Math.min(100, (stats.newExportersCount / Math.max(1, kpiTargets.newExporters)) * 100))}%</span>
+                    </div>
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-3 rounded-full overflow-hidden">
+                      <div className="bg-amber-500 h-full rounded-full" style={{ width: `${Math.min(100, (stats.newExportersCount / Math.max(1, kpiTargets.newExporters)) * 100)}%` }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       </main>
 
       {/* -------------------- 6. DETAILED COMPANY CARD DRAWER -------------------- */}
@@ -2760,6 +2858,18 @@ export default function CrmApp() {
                       value={selectedCompany.mainActivity}
                       onChange={e => handleSaveCompanyEdit({ mainActivity: e.target.value })}
                       className="mt-1 w-full text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2 rounded-xl"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase">Код ТН ВЭД</label>
+                    <input
+                      type="text"
+                      disabled={currentRole === "analyst"}
+                      value={selectedCompany.tnved}
+                      onChange={e => handleSaveCompanyEdit({ tnved: e.target.value })}
+                      className="mt-1 w-full text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2 rounded-xl font-mono"
+                      placeholder="Например: 8471, 8473, 8523"
                     />
                   </div>
 
@@ -3583,6 +3693,17 @@ export default function CrmApp() {
                   onChange={e => setNewCompanyData(prev => ({ ...prev, products: e.target.value }))}
                   placeholder="Прокатные станы, крепежные детали..."
                   className="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Коды ТН ВЭД</label>
+                <input
+                  type="text"
+                  value={newCompanyData.tnved || ""}
+                  onChange={e => setNewCompanyData(prev => ({ ...prev, tnved: e.target.value }))}
+                  placeholder="8471, 8473, 8523 (через запятую)"
+                  className="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl font-mono"
                 />
               </div>
 

@@ -31,6 +31,7 @@ export const initialCompanies = [
     exportVolume2024: 154.2,
     exportVolume2025: 180.0,
     exportCountries: "Китай, Индия, Казахстан, Узбекистан",
+    tnved: "8474, 8479, 7326",
     supportMeasures: [
       { id: "sm-1", name: "Субсидия на сертификацию продукции", serviceType: "exhibition", serviceCategory: "complex", requestDate: "2024-04-01", receiptDate: "2024-05-12", status: "Одобрено", amount: 1500000, conversion: { hasContract: true, contractCountry: "Китай", contractAmount: 12000000, contractDate: "2024-08-15", isNewExporter: false } },
       { id: "sm-2", name: "Участие в международной выставке в Шанхае", serviceType: "exhibition", serviceCategory: "complex", requestDate: "2025-08-01", receiptDate: "2025-10-15", status: "Выполнено", amount: 800000, conversion: { hasContract: true, contractCountry: "Индия", contractAmount: 8500000, contractDate: "2025-11-20", isNewExporter: true } }
@@ -76,6 +77,7 @@ export const initialCompanies = [
     exportVolume2024: 450.5,
     exportVolume2025: 520.0,
     exportCountries: "Китай, Монголия, Вьетнам",
+    tnved: "1512, 2306, 1507",
     supportMeasures: [
       { id: "sm-3", name: "Льготное кредитование экспортеров", serviceType: "other", serviceCategory: "popularization", requestDate: "2023-03-01", receiptDate: "2023-04-20", status: "Одобрено", amount: 25000000, conversion: { hasContract: true, contractCountry: "Китай, Монголия", contractAmount: 45000000, contractDate: "2023-09-10", isNewExporter: false } }
     ],
@@ -118,6 +120,7 @@ export const initialCompanies = [
     exportVolume2024: 0.0,
     exportVolume2025: 0.0,
     exportCountries: "",
+    tnved: "",
     supportMeasures: [],
     interactions: [
       { id: "int-4", date: "2026-02-10", author: "Кузнецов А.И.", text: "Запрос на аудит экспортной готовности. Планируют выход на рынок СНГ к концу 2026 года." }
@@ -158,6 +161,7 @@ export const initialCompanies = [
     exportVolume2024: 0.0,
     exportVolume2025: 5.5,
     exportCountries: "Беларусь, Казахстан",
+    tnved: "1512, 1516",
     supportMeasures: [
       { id: "sm-4", name: "Разработка экспортного бренда и каталога", serviceType: "other", serviceCategory: "popularization", requestDate: "2024-06-01", receiptDate: "2024-08-11", status: "Выполнено", amount: 300000, conversion: null }
     ],
@@ -200,6 +204,7 @@ export const initialCompanies = [
     exportVolume2024: 22.4,
     exportVolume2025: 28.1,
     exportCountries: "Китай, Германия, Япония",
+    tnved: "7102, 7103, 7113",
     supportMeasures: [
       { id: "sm-5", name: "Сертификация продукции Халяль / Органик", serviceType: "search_and_selection", serviceCategory: "complex", requestDate: "2024-10-01", receiptDate: "2024-11-20", status: "Одобрено", amount: 450000, conversion: { hasContract: true, contractCountry: "Германия", contractAmount: 5000000, contractDate: "2025-01-15", isNewExporter: true } }
     ],
@@ -242,6 +247,7 @@ export const initialCompanies = [
     exportVolume2024: 0.0,
     exportVolume2025: 0.0,
     exportCountries: "",
+    tnved: "0808, 0810, 2009",
     supportMeasures: [],
     interactions: [
       { id: "int-7", date: "2026-01-28", author: "Шевченко И.В.", text: "Проконсультировались по поводу экспорта яблок в Египет и ОАЭ. Проблемы с логистикой рефрижераторных контейнеров." }
@@ -280,6 +286,7 @@ export const initialCompanies = [
     exportVolume2024: 55.0,
     exportVolume2025: 67.0,
     exportCountries: "Казахстан, Узбекистан, Индия",
+    tnved: "6109, 6203, 6204",
     supportMeasures: [
       { id: "sm-6", name: "Субсидия Минпромторга на НИОКР", serviceType: "other", serviceCategory: "popularization", requestDate: "2024-01-01", receiptDate: "2024-03-10", status: "Одобрено", amount: 12000000, conversion: null }
     ],
@@ -318,6 +325,7 @@ export const initialCompanies = [
     exportVolume2024: 104.0,
     exportVolume2025: 112.0,
     exportCountries: "Казахстан, Кыргызстан, Турция, ОАЭ",
+    tnved: "0402, 0405, 1901",
     supportMeasures: [
       { id: "sm-7", name: "Субсидирование части затрат на транспортировку древесины", serviceType: "business_mission", serviceCategory: "complex", requestDate: "2024-06-01", receiptDate: "2024-07-20", status: "Одобрено", amount: 4800000, conversion: { hasContract: true, contractCountry: "ОАЭ, Турция", contractAmount: 15000000, contractDate: "2024-10-05", isNewExporter: true } }
     ],
@@ -385,6 +393,7 @@ export async function seedDatabase(force = false) {
         exportVolume2024: comp.exportVolume2024,
         exportVolume2025: comp.exportVolume2025,
         exportCountries: comp.exportCountries,
+        tnved: comp.tnved,
         supportMeasures: comp.supportMeasures,
         interactions: comp.interactions,
         tasks: comp.tasks,

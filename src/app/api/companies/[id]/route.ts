@@ -155,7 +155,7 @@ export async function PUT(
         "inn", "name", "statusExporter", "cpeCooperation", "mspStatus", "categoryMsp", 
         "sphere", "sector", "mainActivity", "products", "emailMinprom", "phoneMinprom", 
         "contactMinprom", "emailCpe", "phoneCpe", "contactCpe", "exportVolume2023", 
-        "exportVolume2024", "exportVolume2025", "exportCountries", "notes", "needsUpdate",
+        "exportVolume2024", "exportVolume2025", "exportCountries", "tnved", "notes", "needsUpdate",
         "customFields"
       ];
 
