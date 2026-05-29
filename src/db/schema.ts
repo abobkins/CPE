@@ -1,4 +1,4 @@
-import { pgTable, serial, text, boolean, timestamp, jsonb, doublePrecision } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, boolean, timestamp, jsonb, doublePrecision, integer } from "drizzle-orm/pg-core";
 
 export const companies = pgTable("companies", {
   id: serial("id").primaryKey(),
@@ -145,5 +145,35 @@ export const kpiTargets = pgTable("kpi_targets", {
   supportedExportVolume: doublePrecision("supported_export_volume").default(500).notNull(),
   countryDiversification: doublePrecision("country_diversification").default(15).notNull(),
   newExporters: doublePrecision("new_exporters").default(10).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const supportMeasures = pgTable("support_measures", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  category: text("category"),
+  personCategory: text("person_category"),
+  amount: text("amount"),
+  deadline: text("deadline"),
+  body: text("body"),
+  sourceUrl: text("source_url"),
+  status: text("status").default("active").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const eventsCalendar = pgTable("events_calendar", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  dateFrom: timestamp("date_from").notNull(),
+  dateTo: timestamp("date_to"),
+  location: text("location"),
+  organizer: text("organizer"),
+  imageUrl: text("image_url"),
+  registrationUrl: text("registration_url"),
+  status: text("status").default("published").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

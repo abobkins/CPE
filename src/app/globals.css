@@ -1,1 +1,49 @@
 @import "tailwindcss";
+
+@theme {
+  --color-text: #0c2248;
+  --color-accent: #0064dc;
+  --color-hover: #006eff;
+  --color-link: #003ca0;
+  --color-bg: #f1f6fb;
+  --color-card: #ffffff;
+  --default-radius: 20px;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: "Golos Text", sans-serif;
+    font-size: 20px;
+    line-height: 130%;
+    font-weight: 400;
+  }
+}
+
+@layer components {
+  .container-site {
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+  @media (min-width: 1200px) {
+    .container-site {
+      max-width: 96%;
+      padding: 0 30px;
+    }
+  }
+  @media (min-width: 1400px) {
+    .container-site {
+      max-width: 90%;
+    }
+  }
+  @media (min-width: 1800px) {
+    .container-site {
+      max-width: 1710px;
+    }
+  }
+}

@@ -1,0 +1,218 @@
+.vt2b-projects, .vt2b-clients {
+    display: flex;
+    flex-direction: column;
+    gap: 45px;
+
+    @media(max-width: 767px) {
+        gap: 25px;
+    }
+}
+
+.vt2b-projects__title span, .vt2b-clients__title span {
+    color: var(--accent-color);
+}
+
+.vt2b-projects__description, .vt2b-clients__description {
+    color: var(--light-color);
+}
+
+.projects-multiple-remove {
+    background-color: transparent;
+    border: 0;
+    padding: 0;
+    position: absolute;
+    z-index: 3;
+    right: 0;
+    top: 25px;
+    width: 20px;
+    height: 20px;
+    font-size: 0;
+    -ms-transform: translateX(100%);
+    -webkit-transform: translateX(100%);
+    transform: translateX(100%);
+    background-image: url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Crect width=\'20\' height=\'20\' rx=\'6\' fill=\'white\'/%3E%3Cpath d=\'M10 8.66688L14.6669 4L16 5.33312L11.3331 10L16 14.6669L14.6669 16L10 11.3331L5.33312 16L4 14.6669L8.66688 10L4 5.33312L5.33312 4L10 8.66688Z\' fill=\'%230C2248\'/%3E%3C/svg%3E%0A");
+}
+
+/*компонент*/
+.vt2b-swiper__container {
+    position: relative;
+}
+
+.vt2b-swiper__projects {
+    position: relative;
+    z-index: 1;
+
+    @media(max-width: 767px) {
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+    }
+}
+
+.vt2b-swiper__container .swiper-button-prev {
+    left: -45px;
+}
+
+.vt2b-swiper__container .swiper-button-next {
+    right: -45px;
+}
+
+.vt2b-swiper__container .swiper-pagination {
+    position: relative;
+    top: inset;
+    bottom: unset;
+}
+
+.swiper-slide {
+    min-height: 280px;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+
+    @media(max-width: 1023px) {
+        min-height: 250px;
+    }
+    @media(max-width: 767px) {
+        border-radius: 10px;
+    }
+}
+
+.swiper-slide img {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.vt2b-swiper__text-item {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 25px;
+    transform: translateY(100%);
+    transition: 0.4s;
+    color: var(--white);
+    background-color: rgba(0, 0, 0, 0.6);
+
+    @media(max-width: 767px) {
+        border-radius: 10px;
+    }
+}
+
+
+.vt2b-swiper__item-title {
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 130%;
+
+    @media(max-width: 767px) {
+        font-size: 16px;
+    }
+}
+
+.vt2b-swiper__item-description {
+    font-size: 16px;
+    -webkit-line-clamp: 5; /* Число отображаемых строк */
+    display: -webkit-box; /* Включаем флексбоксы */
+    -webkit-box-orient: vertical; /* Вертикальная ориентация */
+    overflow: hidden;
+    line-height: 130%;
+
+    @media(max-width: 767px) {
+        -webkit-line-clamp: 7;
+        font-size: 14px;
+    }
+}
+
+.swiper-slide:hover {
+
+    .vt2b-swiper__text-item {
+        transform: translateY(0);
+        transition: 0.4s;
+    }
+}
+/*компонент*/
+
+/*компонент*/
+.vt2b-logo-train {
+    --width-container: 100%;
+    
+    display: flex;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+    /* Градиент для плавных краев */
+    mask-image: linear-gradient(
+        to right,
+        transparent,
+        black 10%,
+        black 90%,
+        transparent
+    ); 
+}
+
+.vt2b-logo-train__container {
+    display: flex;
+    flex-shrink: 0;
+    min-width: 100%;
+    animation: scroll 45s linear infinite;
+    /* Пауза при наведении */
+    animation-play-state: running;
+}
+
+.vt2b-logo-train:hover .vt2b-logo-train__container {
+    animation-play-state: paused;
+}
+
+.vt2b-logo-train__item {
+    flex: 0 0 auto;
+    width: 150px;
+    height: 150px;
+    margin: 15px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    @media(max-width: 767px) {
+    	width: 100px;
+	    height: 100px;
+	    margin: 10px 30px;
+    }
+}
+
+.vt2b-logo-train__item img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: all 0.3s ease;
+}
+
+.vt2b-logo-train__item:hover img {
+    transform: scale(1.05);
+}
+
+/* Анимация для бесконечного скролла */
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%); /* Сдвигаем на половину ширины */
+    }
+}
+/*компонент*/
+
+/*чтобы перебить стили, которые автоматически у клиента затираются*/
+.form-multiple .row.vt2b-row__projects label {
+    display: flex;
+}
+.company-register-sticky {
+    z-index: 100;
+}

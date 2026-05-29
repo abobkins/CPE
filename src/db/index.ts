@@ -198,6 +198,40 @@ export async function ensureDatabaseReady() {
       await db.execute(sql`
         ALTER TABLE event_meetings ADD COLUMN IF NOT EXISTS assigned_employee text NOT NULL DEFAULT ''
       `);
+
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS support_measures (
+          id serial PRIMARY KEY,
+          title text NOT NULL,
+          description text,
+          category text,
+          person_category text,
+          amount text,
+          deadline text,
+          body text,
+          source_url text,
+          status text NOT NULL DEFAULT 'active',
+          created_at timestamp NOT NULL DEFAULT now(),
+          updated_at timestamp NOT NULL DEFAULT now()
+        )
+      `);
+
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS events_calendar (
+          id serial PRIMARY KEY,
+          title text NOT NULL,
+          description text,
+          date_from timestamp NOT NULL,
+          date_to timestamp,
+          location text,
+          organizer text,
+          image_url text,
+          registration_url text,
+          status text NOT NULL DEFAULT 'published',
+          created_at timestamp NOT NULL DEFAULT now(),
+          updated_at timestamp NOT NULL DEFAULT now()
+        )
+      `);
     })();
   }
 
